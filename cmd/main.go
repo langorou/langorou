@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/langorou/langorou/pkg/client"
 )
 
 func main() {
@@ -16,5 +18,12 @@ func main() {
 	ipAddr := args[0]
 	port := args[1]
 	fmt.Printf("ip %s port %s\n", ipAddr, port)
+
+	_, err := client.NewTcpClient(ipAddr, port)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	os.Exit(0)
 }
