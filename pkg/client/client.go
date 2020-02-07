@@ -25,8 +25,8 @@ type Move struct {
 // Player represents the player -> server protocol
 type Player interface {
 	// Player -> Server
-	Nme(t uint8, name []byte) error
-	Mov(n uint8, moves []Move) error
+	Nme() (name string)
+	Mov() (moves []Move)
 }
 
 // Server represents the server -> player protocol

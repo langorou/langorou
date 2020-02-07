@@ -10,11 +10,11 @@ func NewTCPClient() (*TCPClient, error) {
 	return &TCPClient{}, nil
 }
 
-func (T TCPClient) Nme(t uint8, name []byte) error {
+func (T TCPClient) Nme() string {
 	panic("implement me")
 }
 
-func (T TCPClient) Mov(n uint8, moves []Move) error {
+func (T TCPClient) Mov() []Move {
 	panic("implement me")
 }
 
