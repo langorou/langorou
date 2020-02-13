@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strconv"
+
+	"github.com/langorou/langorou/pkg/utils"
 )
 
 // A good ressource
@@ -62,16 +63,21 @@ func NewTCPClient(addr string) (TCPClient, error) {
 
 // SendName to the server
 func (c TCPClient) SendName(name string) error {
-	ASCIIName := strconv.QuoteToASCII(name)
-	t := len(ASCIIName)
+	isASCII := utils.IsASCII(name)
+	if !isASCII {
+		return fmt.Errorf("%s is not a valid ASCII name", name)
+	}
+
+	t := len(name)
 	if t == 0 || t > 255 {
 		return fmt.Errorf("invalid name '%s', please use a short ASCII name", name)
 	}
 
 	msg := make([]byte, 3+1+t)
-	copy(msg, []byte("NME"))
+	fmt.Println(3 + 1 + t)
+	copy(msg[:3], []byte("NME"))
 	msg[3] = byte(uint8(t))
-	copy(msg, []byte(ASCIIName))
+	copy(msg[4:], []byte(name))
 
 	_, err := c.conn.Write(msg)
 
@@ -83,7 +89,7 @@ func (c TCPClient) SendMove(n uint8, moves []Move) error {
 
 	msg := make([]byte, 3+1+5*n)
 
-	copy(msg, []byte("MOV"))
+	copy(msg[:3], []byte("MOV"))
 	msg[3] = byte(n)
 
 	for i := 0; i < int(n); i++ {
@@ -212,7 +218,7 @@ func (c TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
 		return err
 	}
 	if command != assertCmd {
-		return fmt.Errorf("should have received %s but got %s instead", assertCmd, command) // TODO: use string for enum for a readable error
+		return fmt.Errorf("should have received %s but got %s instead", assertCmd, command)
 	}
 	return nil
 }
