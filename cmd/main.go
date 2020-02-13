@@ -34,9 +34,44 @@ func main() {
 	addr := net.JoinHostPort(args[0], args[1])
 	fmt.Printf("connecting to %s\n", addr)
 
-	_, err = client.NewTCPClient(addr)
+	c, err := client.NewTCPClient(addr)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// Send name
+	err = c.SendName("langorou")
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Receive SET
+	err = c.ReceiveSpecificCommand(client.SET)
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Receive HUM
+	err = c.ReceiveSpecificCommand(client.HUM)
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Receive HME
+	err = c.ReceiveSpecificCommand(client.HME)
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Receive MAP
+	err = c.ReceiveSpecificCommand(client.MAP)
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
 	}
 
