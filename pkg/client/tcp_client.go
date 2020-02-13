@@ -62,20 +62,32 @@ func (c TCPClient) SendName(name string) error {
 	if t == 0 || t > 255 {
 		return fmt.Errorf("invalid name '%s', please use a short ASCII name", name)
 	}
-	_, err := c.conn.Write([]byte(fmt.Sprintf("NME%d%s", t, ASCIIName)))
+
+	msg := make([]byte, 3+1+t)
+	copy(msg, []byte("NME"))
+	msg[3] = byte(uint8(t))
+	copy(msg, []byte(ASCIIName))
+
+	_, err := c.conn.Write(msg)
 
 	return err
 }
 
 // SendMove to the server
 func (c TCPClient) SendMove(n uint8, moves []Move) error {
-	strMsg := fmt.Sprintf("MOV%d", n)
+
+	msg := make([]byte, 3+1+5*n)
+
+	copy(msg, []byte("MOV"))
+	msg[3] = byte(n)
 
 	for i := 0; i < int(n); i++ {
-		strMsg += fmt.Sprintf("%d%d%d%d%d", moves[i].Start.X, moves[i].Start.Y, moves[i].N, moves[i].End.X, moves[i].End.Y)
+		msg[4+5*i] = byte(moves[i].Start.X)
+		msg[4+5*i+1] = byte(moves[i].Start.Y)
+		msg[4+5*i+2] = byte(moves[i].N)
+		msg[4+5*i+3] = byte(moves[i].End.X)
+		msg[4+5*i+4] = byte(moves[i].End.Y)
 	}
-
-	msg := []byte(strMsg)
 
 	_, err := c.conn.Write(msg)
 
