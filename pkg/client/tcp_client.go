@@ -1,7 +1,9 @@
 package client
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 )
@@ -78,4 +80,100 @@ func (c TCPClient) SendMove(n uint8, moves []Move) error {
 	_, err := c.conn.Write(msg)
 
 	return err
+}
+
+// ReceiveMsg from the server and parse it
+func (c TCPClient) ReceiveMsg() error {
+	reader := bufio.NewReader(c.conn)
+	buf := make([]byte, 9)
+	if _, err := io.ReadFull(reader, buf[:3]); err != nil { // Read len(buf) chars
+		return err
+	}
+
+	command := string(buf[:3])
+	switch command {
+	case "SET":
+		if _, err := io.ReadFull(reader, buf[:2]); err != nil {
+			return err
+		}
+		n := uint8(buf[0])
+		m := uint8(buf[1])
+		// DO something with it
+
+	case "HUM":
+		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
+			return err
+		}
+		n := uint8(buf[0])
+		coords := make([]Coordinates, n)
+		for i := 0; i < int(n); i++ {
+			if _, err := io.ReadFull(reader, buf[:2]); err != nil {
+				return err
+			}
+			coords[i] = Coordinates{
+				X: uint8(buf[0]),
+				Y: uint8(buf[1]),
+			}
+		}
+		// DO something with it
+
+	case "HME":
+		if _, err := io.ReadFull(reader, buf[:2]); err != nil {
+			return err
+		}
+		x := uint8(buf[0])
+		y := uint8(buf[1])
+		// DO something with it
+
+	case "UPD":
+		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
+			return err
+		}
+		n := uint8(buf[0])
+		changes := make([]Changes, n)
+		for i := 0; i < int(n); i++ {
+			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
+				return err
+			}
+			changes[i] = Changes{
+				X:          uint8(buf[0]),
+				Y:          uint8(buf[1]),
+				Humans:     uint(buf[2]),
+				Vampires:   uint(buf[3]),
+				Werewolves: uint(buf[4]),
+			}
+		}
+		// DO something with it
+
+	case "MAP":
+		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
+			return err
+		}
+		n := uint8(buf[0])
+		changes := make([]Changes, n)
+		for i := 0; i < int(n); i++ {
+			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
+				return err
+			}
+			changes[i] = Changes{
+				X:          uint8(buf[0]),
+				Y:          uint8(buf[1]),
+				Humans:     uint(buf[2]),
+				Vampires:   uint(buf[3]),
+				Werewolves: uint(buf[4]),
+			}
+		}
+
+		// DO something with it
+
+	case "END":
+		// Next Game
+
+	case "BYE":
+		// Server stop
+
+	default:
+		return fmt.Errorf("invalid command from server : %s", command)
+	}
+
 }
