@@ -49,7 +49,7 @@ func NewTCPClient(addr string) (TCPClient, error) {
 	}
 
 	return TCPClient{
-		conn: &conn,
+		conn: conn,
 	}, nil
 }
 
@@ -57,10 +57,25 @@ func NewTCPClient(addr string) (TCPClient, error) {
 func (c TCPClient) SendName(name string) error {
 	ASCIIName := strconv.QuoteToASCII(name)
 	t := len(ASCIIName)
-	if t == 0 || t > 127 {
+	if t == 0 || t > 255 {
 		return fmt.Errorf("invalid name '%s', please use a short ASCII name", name)
 	}
 	_, err := c.conn.Write([]byte(fmt.Sprintf("NME%d%s", t, ASCIIName)))
+
+	return err
+}
+
+// SendMove to the server
+func (c TCPClient) SendMove(n uint8, moves []Move) error {
+	strMsg := fmt.Sprintf("MOV%d", n)
+
+	for i := 0; i < int(n); i++ {
+		strMsg += fmt.Sprintf("%d%d%d%d%d", moves[i].Start.X, moves[i].Start.Y, moves[i].N, moves[i].End.X, moves[i].End.Y)
+	}
+
+	msg := []byte(strMsg)
+
+	_, err := c.conn.Write(msg)
 
 	return err
 }

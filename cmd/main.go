@@ -18,11 +18,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	ip := net.ParseIP(args[0])
-	if ip == nil {
-		fmt.Printf("invalid IP address: %s\n", args[0])
-		os.Exit(1)
-	}
+	// We might to use localhost...
+	// ip := net.ParseIP(args[0])
+	// if ip == nil {
+	// 	fmt.Printf("invalid IP address: %s\n", args[0])
+	// 	os.Exit(1)
+	// }
 
 	_, err := strconv.ParseUint(args[1], 10, 16) // 0 <= port <= 65535
 	if err != nil {
@@ -30,11 +31,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	addr := net.JoinHostPort(ip.String(), args[1])
+	addr := net.JoinHostPort(args[0], args[1])
 	fmt.Printf("connecting to %s\n", addr)
 
-	os.Exit(0)
-	_, err = client.NewTCPClient(ip, args[1])
+	_, err = client.NewTCPClient(addr)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
