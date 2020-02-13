@@ -25,10 +25,10 @@ const (
 	MOV
 )
 
-type ServerMsg int
+type ServerCmd int
 
 const (
-	_ ServerMsg = iota
+	_ ServerCmd = iota
 	SET
 	HUM
 	HME
@@ -37,6 +37,10 @@ const (
 	END
 	BYE
 )
+
+func (cmd ServerCmd) String() string {
+	return [...]string{"UNKNOWN", "SET", "HUM", "HME", "MAP", "UPD", "END", "BYE"}[cmd]
+}
 
 type TCPClient struct {
 	conn net.Conn
@@ -96,7 +100,7 @@ func (c TCPClient) SendMove(n uint8, moves []Move) error {
 }
 
 // ReceiveMsg from the server and parse it
-func (c TCPClient) ReceiveMsg() (ServerMsg, error) {
+func (c TCPClient) ReceiveMsg() (ServerCmd, error) {
 	reader := bufio.NewReader(c.conn)
 	buf := make([]byte, 9)
 	if _, err := io.ReadFull(reader, buf[:3]); err != nil { // Read len(buf) chars
@@ -112,6 +116,8 @@ func (c TCPClient) ReceiveMsg() (ServerMsg, error) {
 		n := uint8(buf[0])
 		m := uint8(buf[1])
 		// DO something with it
+		_, _ = n, m
+		return SET, nil
 
 	case "HUM":
 		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
@@ -138,6 +144,7 @@ func (c TCPClient) ReceiveMsg() (ServerMsg, error) {
 		x := uint8(buf[0])
 		y := uint8(buf[1])
 		// DO something with it
+		_, _ = x, y
 		return HME, nil
 
 	case "UPD":
@@ -196,4 +203,16 @@ func (c TCPClient) ReceiveMsg() (ServerMsg, error) {
 		return 0, fmt.Errorf("invalid command from server : %s", command)
 	}
 
+}
+
+// ReceiveSpecificCommand returns an error if the command is not as expected
+func (c TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
+	command, err := c.ReceiveMsg()
+	if err != nil {
+		return err
+	}
+	if command != assertCmd {
+		return fmt.Errorf("should have received %s but got %s instead", assertCmd, command) // TODO: use string for enum for a readable error
+	}
+	return nil
 }
