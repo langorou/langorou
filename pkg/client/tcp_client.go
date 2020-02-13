@@ -28,7 +28,8 @@ const (
 type ServerMsg int
 
 const (
-	SET ServerMsg = iota
+	_ ServerMsg = iota
+	SET
 	HUM
 	HME
 	MAP
@@ -95,18 +96,18 @@ func (c TCPClient) SendMove(n uint8, moves []Move) error {
 }
 
 // ReceiveMsg from the server and parse it
-func (c TCPClient) ReceiveMsg() error {
+func (c TCPClient) ReceiveMsg() (ServerMsg, error) {
 	reader := bufio.NewReader(c.conn)
 	buf := make([]byte, 9)
 	if _, err := io.ReadFull(reader, buf[:3]); err != nil { // Read len(buf) chars
-		return err
+		return 0, err
 	}
 
 	command := string(buf[:3])
 	switch command {
 	case "SET":
 		if _, err := io.ReadFull(reader, buf[:2]); err != nil {
-			return err
+			return SET, err
 		}
 		n := uint8(buf[0])
 		m := uint8(buf[1])
@@ -114,13 +115,13 @@ func (c TCPClient) ReceiveMsg() error {
 
 	case "HUM":
 		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
-			return err
+			return HUM, err
 		}
 		n := uint8(buf[0])
 		coords := make([]Coordinates, n)
 		for i := 0; i < int(n); i++ {
 			if _, err := io.ReadFull(reader, buf[:2]); err != nil {
-				return err
+				return HUM, err
 			}
 			coords[i] = Coordinates{
 				X: uint8(buf[0]),
@@ -128,24 +129,26 @@ func (c TCPClient) ReceiveMsg() error {
 			}
 		}
 		// DO something with it
+		return HUM, nil
 
 	case "HME":
 		if _, err := io.ReadFull(reader, buf[:2]); err != nil {
-			return err
+			return HME, err
 		}
 		x := uint8(buf[0])
 		y := uint8(buf[1])
 		// DO something with it
+		return HME, nil
 
 	case "UPD":
 		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
-			return err
+			return UPD, err
 		}
 		n := uint8(buf[0])
 		changes := make([]Changes, n)
 		for i := 0; i < int(n); i++ {
 			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
-				return err
+				return UPD, err
 			}
 			changes[i] = Changes{
 				X:          uint8(buf[0]),
@@ -156,16 +159,17 @@ func (c TCPClient) ReceiveMsg() error {
 			}
 		}
 		// DO something with it
+		return UPD, nil
 
 	case "MAP":
 		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
-			return err
+			return MAP, err
 		}
 		n := uint8(buf[0])
 		changes := make([]Changes, n)
 		for i := 0; i < int(n); i++ {
 			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
-				return err
+				return MAP, err
 			}
 			changes[i] = Changes{
 				X:          uint8(buf[0]),
@@ -178,14 +182,18 @@ func (c TCPClient) ReceiveMsg() error {
 
 		// DO something with it
 
+		return MAP, nil
+
 	case "END":
 		// Next Game
+		return END, nil
 
 	case "BYE":
 		// Server stop
+		return BYE, nil
 
 	default:
-		return fmt.Errorf("invalid command from server : %s", command)
+		return 0, fmt.Errorf("invalid command from server : %s", command)
 	}
 
 }
