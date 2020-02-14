@@ -73,11 +73,16 @@ func computePotentialNextStates(curState state, movs []Move) []PotentialState {
 	// All moves are necesseraly independent, we'll have less 2**len(moves) possible states (max 2 outputs per move)
 
 	// Make a deep copy of the state -> is it necessary ?
-	potentialNextStates := make([]PotentialState, len(movs))
+	potentialStatesPerMov := make([][]PotentialState, len(movs))
 
-	for _, mov := range movs {
-		potentialNextStates = append(potentialNextStates, evaluateMoveOutcome(curState, mov)...)
+	for i, mov := range movs {
+		potentialStatesPerMov[i] = evaluateMoveOutcome(curState, mov)
 	}
+
+	//
+	// TODO : We need to create the complete tree of possibilities: outcome 1 of move 1 x outcome 1 of move 2 ...
+
+	potentialNextStates := make([]PotentialState, len(movs))
 
 	return potentialNextStates
 }
