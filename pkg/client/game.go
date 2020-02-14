@@ -46,4 +46,4 @@ func (T Game) End() error {
 	panic("implement me")
 }
 
-var _ Client = &Game{}
+var _ = &Game{}
