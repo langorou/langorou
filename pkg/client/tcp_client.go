@@ -14,11 +14,9 @@ import (
 // https://ipfs.io/ipfs/QmfYeDhGH9bZzihBUDEQbCbTc5k5FZKURMUoUvfmc27BwL/socket/tcp_sockets.html
 
 // About net.Conn vs net.TCPConn :
-// > This interface has primary methods ReadFrom and WriteTo to handle packet reads and writes.
-// > The Go net package recommends using these interface types rather than the concrete ones.
+// > This interface (net.Conn) has primary methods ReadFrom and WriteTo to handle packet reads and writes.
+// > The Go net package recommends using these interface types rather than the concrete ones (TCPConn or UDPConn).
 // > But by using them, you lose specific methods such as SetKeepAlive or TCPConn and SetReadBuffer of UDPConn, unless you do a type cast. It is your choice.
-
-// TCPClient connects to the game server
 
 type ClientMsg int
 
@@ -44,6 +42,7 @@ func (cmd ServerCmd) String() string {
 	return [...]string{"UNKNOWN", "SET", "HUM", "HME", "MAP", "UPD", "END", "BYE"}[cmd]
 }
 
+// TCPClient handles the connection to the server, and also encapsulate the game
 type TCPClient struct {
 	conn         net.Conn
 	ourRaceCoord Coordinates
@@ -168,14 +167,27 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
 				return UPD, err
 			}
-			changes[i] = Changes{
-				Coords: Coordinates{
-					X: buf[0],
-					Y: buf[1],
-				},
-				Neutral: buf[2],
-				Ally:    buf[3],
-				Enemy:   buf[4],
+
+			if c.isWerewolf {
+				changes[i] = Changes{
+					Coords: Coordinates{
+						X: buf[0],
+						Y: buf[1],
+					},
+					Neutral: buf[2],
+					Ally:    buf[4], // buf[4] represents the number of Werewolves
+					Enemy:   buf[3], // buf[3] represents the number of Vampires
+				}
+			} else {
+				changes[i] = Changes{
+					Coords: Coordinates{
+						X: buf[0],
+						Y: buf[1],
+					},
+					Neutral: buf[2],
+					Ally:    buf[3], // buf[3] represents the number of Vampires
+					Enemy:   buf[4], // buf[4] represents the number of Werewolves
+				}
 			}
 		}
 		// DO something with it
@@ -214,6 +226,8 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 				c.Ally, c.Enemy = c.Enemy, c.Ally
 				changes[i] = c
 			}
+
+			c.isWerewolf = true
 		}
 
 		// DO something with it
@@ -222,6 +236,11 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 
 	case "END":
 		// Next Game
+
+		// we reset some variables
+		c.isWerewolf = false
+		c.ourRaceCoord = Coordinates{}
+
 		return END, nil
 
 	case "BYE":
