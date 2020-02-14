@@ -6,6 +6,7 @@ import "log"
 type Game struct {
 	state
 	playerName string
+	playerRace race
 }
 
 // NewGame creates a new TCP client
@@ -39,8 +40,14 @@ func (g *Game) Hum(n uint8, coords []Coordinates) {
 	}
 }
 
-func (T Game) Hme(x uint8, y uint8) error {
-	panic("implement me")
+// Hme determine the race of the player
+func (g *Game) Hme(x uint8, y uint8) {
+	if g.state.grid[y][x].race == Empty {
+		// TODO save start position if Hme is called before Map function
+		log.Printf("Player race cannot be determinded because board state is not initialised")
+	} else {
+		g.playerRace = g.state.grid[y][x].race
+	}
 }
 
 //Upd updates the state of the game
@@ -65,13 +72,14 @@ func (g *Game) Upd(changes []Changes) {
 	}
 }
 
-//Map is the same as Upd but is called only once at the beginning
+// Map is the same as Upd but is called only once at the beginning
 func (g *Game) Map(changes []Changes) {
 	g.Upd(changes)
 }
 
-func (T Game) End() error {
-	panic("implement me")
+// End delete the state of the game
+func (g *Game) End() error {
+	g = Game{}
 }
 
 var _ = &Game{}
