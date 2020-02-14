@@ -62,7 +62,7 @@ func NewTCPClient(addr string) (TCPClient, error) {
 }
 
 // SendName to the server
-func (c TCPClient) SendName(name string) error {
+func (c *TCPClient) SendName(name string) error {
 	isASCII := utils.IsASCII(name)
 	if !isASCII {
 		return fmt.Errorf("%s is not a valid ASCII name", name)
