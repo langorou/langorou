@@ -74,9 +74,9 @@ func (c *TCPClient) SendName(name string) error {
 	}
 
 	msg := make([]byte, 3+1+t)
-	copy(msg[:3], []byte("NME"))
-	msg[3] = byte(uint8(t))
-	copy(msg[4:], []byte(name))
+	copy(msg[:3], "NME")
+	msg[3] = uint8(t)
+	copy(msg[4:], name)
 
 	_, err := c.conn.Write(msg)
 
@@ -89,15 +89,15 @@ func (c *TCPClient) SendMove(moves []Move) error {
 	n := len(moves)
 	msg := make([]byte, 3+1+5*n)
 
-	copy(msg[:3], []byte("MOV"))
-	msg[3] = byte(uint8(n))
+	copy(msg[:3], "MOV")
+	msg[3] = uint8(n)
 
 	for i := 0; i < n; i++ {
-		msg[4+5*i] = byte(moves[i].Start.X)
-		msg[4+5*i+1] = byte(moves[i].Start.Y)
-		msg[4+5*i+2] = byte(moves[i].N)
-		msg[4+5*i+3] = byte(moves[i].End.X)
-		msg[4+5*i+4] = byte(moves[i].End.Y)
+		msg[4+5*i] = moves[i].Start.X
+		msg[4+5*i+1] = moves[i].Start.Y
+		msg[4+5*i+2] = moves[i].N
+		msg[4+5*i+3] = moves[i].End.X
+		msg[4+5*i+4] = moves[i].End.Y
 	}
 
 	_, err := c.conn.Write(msg)
@@ -119,8 +119,8 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		if _, err := io.ReadFull(reader, buf[:2]); err != nil {
 			return SET, err
 		}
-		n := uint8(buf[0])
-		m := uint8(buf[1])
+		n := buf[0]
+		m := buf[1]
 		// DO something with it
 		_, _ = n, m
 		return SET, nil
@@ -129,15 +129,15 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
 			return HUM, err
 		}
-		n := uint8(buf[0])
+		n := buf[0]
 		coords := make([]Coordinates, n)
 		for i := 0; i < int(n); i++ {
 			if _, err := io.ReadFull(reader, buf[:2]); err != nil {
 				return HUM, err
 			}
 			coords[i] = Coordinates{
-				X: uint8(buf[0]),
-				Y: uint8(buf[1]),
+				X: buf[0],
+				Y: buf[1],
 			}
 		}
 		// DO something with it
@@ -147,8 +147,8 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		if _, err := io.ReadFull(reader, buf[:2]); err != nil {
 			return HME, err
 		}
-		x := uint8(buf[0])
-		y := uint8(buf[1])
+		x := buf[0]
+		y := buf[1]
 		// DO something with it
 		_, _ = x, y
 		return HME, nil
@@ -157,18 +157,18 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
 			return UPD, err
 		}
-		n := uint8(buf[0])
+		n := buf[0]
 		changes := make([]Changes, n)
 		for i := 0; i < int(n); i++ {
 			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
 				return UPD, err
 			}
 			changes[i] = Changes{
-				X:          uint8(buf[0]),
-				Y:          uint8(buf[1]),
-				Humans:     uint(buf[2]),
-				Vampires:   uint(buf[3]),
-				Werewolves: uint(buf[4]),
+				X:          buf[0],
+				Y:          buf[1],
+				Humans:     buf[2],
+				Vampires:   buf[3],
+				Werewolves: buf[4],
 			}
 		}
 		// DO something with it
@@ -178,18 +178,18 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
 			return MAP, err
 		}
-		n := uint8(buf[0])
+		n := buf[0]
 		changes := make([]Changes, n)
 		for i := 0; i < int(n); i++ {
 			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
 				return MAP, err
 			}
 			changes[i] = Changes{
-				X:          uint8(buf[0]),
-				Y:          uint8(buf[1]),
-				Humans:     uint(buf[2]),
-				Vampires:   uint(buf[3]),
-				Werewolves: uint(buf[4]),
+				X:          buf[0],
+				Y:          buf[1],
+				Humans:     buf[2],
+				Vampires:   buf[3],
+				Werewolves: buf[4],
 			}
 		}
 
