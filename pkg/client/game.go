@@ -6,7 +6,6 @@ import "log"
 type Game struct {
 	state
 	playerName string
-	playerRace race
 }
 
 // NewGame creates a new TCP client
@@ -32,21 +31,11 @@ func (g *Game) Set(n uint8, m uint8) {
 	}
 }
 
-func (g *Game) Hum(n uint8, coords []Coordinates) {
+func (g *Game) Hum(coords []Coordinates) {
 	for _, pos := range coords {
-		g.state.grid[pos.Y][pos.X].race = Villager
+		g.state.grid[pos.Y][pos.X].race = Neutral
 		//TODO check map and human order
 		g.state.grid[pos.Y][pos.X].count = 0
-	}
-}
-
-// Hme determine the race of the player
-func (g *Game) Hme(x uint8, y uint8) {
-	if g.state.grid[y][x].race == Empty {
-		// TODO save start position if Hme is called before Map function
-		log.Printf("Player race cannot be determinded because board state is not initialised")
-	} else {
-		g.playerRace = g.state.grid[y][x].race
 	}
 }
 
@@ -54,18 +43,18 @@ func (g *Game) Hme(x uint8, y uint8) {
 func (g *Game) Upd(changes []Changes) {
 
 	for _, cha := range changes {
-		if cha.Humans > 0 && cha.Vampires == 0 && cha.Werewolves == 0 {
-			g.state.grid[cha.Y][cha.X].count = cha.Humans
-			g.state.grid[cha.Y][cha.X].race = Villager
-		} else if cha.Humans == 0 && cha.Vampires > 0 && cha.Werewolves == 0 {
-			g.state.grid[cha.Y][cha.X].count = cha.Vampires
-			g.state.grid[cha.Y][cha.X].race = Vampire
-		} else if cha.Humans == 0 && cha.Vampires == 0 && cha.Werewolves > 0 {
-			g.state.grid[cha.Y][cha.X].count = cha.Werewolves
-			g.state.grid[cha.Y][cha.X].race = Werewolf
-		} else if cha.Humans == 0 && cha.Vampires == 0 && cha.Werewolves == 0 {
-			g.state.grid[cha.Y][cha.X].count = 0
-			g.state.grid[cha.Y][cha.X].race = Empty
+		if cha.Neutral > 0 && cha.Ally == 0 && cha.Enemy == 0 {
+			g.state.grid[cha.Coords.Y][cha.Coords.X].count = cha.Neutral
+			g.state.grid[cha.Coords.Y][cha.Coords.X].race = Neutral
+		} else if cha.Neutral == 0 && cha.Ally > 0 && cha.Enemy == 0 {
+			g.state.grid[cha.Coords.Y][cha.Coords.X].count = cha.Ally
+			g.state.grid[cha.Coords.Y][cha.Coords.X].race = Ally
+		} else if cha.Neutral == 0 && cha.Ally == 0 && cha.Enemy > 0 {
+			g.state.grid[cha.Coords.Y][cha.Coords.X].count = cha.Enemy
+			g.state.grid[cha.Coords.Y][cha.Coords.X].race = Enemy
+		} else if cha.Neutral == 0 && cha.Ally == 0 && cha.Enemy == 0 {
+			g.state.grid[cha.Coords.Y][cha.Coords.X].count = 0
+			g.state.grid[cha.Coords.Y][cha.Coords.X].race = Empty
 		} else {
 			log.Printf("impossible case: only one race on a cell")
 		}
@@ -79,7 +68,8 @@ func (g *Game) Map(changes []Changes) {
 
 // End delete the state of the game
 func (g *Game) End() error {
-	g = Game{}
+	g = &Game{}
+	return nil
 }
 
 var _ = &Game{}

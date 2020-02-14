@@ -1,6 +1,10 @@
 package client
 
-func evaluateHeuristic(s state, changes []Changes) float64 {
+// func evaluateNextState(s state, movs []Move) state {
+// 	nextGrid = state{}
+// }
+
+func scoreState(s state) float64 {
 
 	// Apply the change on the state
 	newState := s
@@ -11,7 +15,7 @@ func evaluateHeuristic(s state, changes []Changes) float64 {
 			switch c.race {
 			case Empty:
 				// nothing
-			case Villager:
+			case Neutral:
 				// nothing
 			case Ally:
 				h += float64(c.count)

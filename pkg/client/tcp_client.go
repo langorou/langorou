@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"net"
 
 	"github.com/langorou/langorou/pkg/utils"
@@ -44,7 +45,9 @@ func (cmd ServerCmd) String() string {
 }
 
 type TCPClient struct {
-	conn net.Conn
+	conn         net.Conn
+	ourRaceCoord Coordinates
+	isWerewolf   bool // We assume we're a vampire
 }
 
 // NewTCPClient creates a new TCP client
@@ -149,8 +152,10 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		}
 		x := buf[0]
 		y := buf[1]
-		// DO something with it
-		_, _ = x, y
+
+		c.ourRaceCoord = Coordinates{X: x, Y: y}
+		log.Printf("new coords: %+v", c.ourRaceCoord)
+
 		return HME, nil
 
 	case "UPD":
@@ -164,11 +169,13 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 				return UPD, err
 			}
 			changes[i] = Changes{
-				X:          buf[0],
-				Y:          buf[1],
-				Humans:     buf[2],
-				Vampires:   buf[3],
-				Werewolves: buf[4],
+				Coords: Coordinates{
+					X: buf[0],
+					Y: buf[1],
+				},
+				Neutral: buf[2],
+				Ally:    buf[3],
+				Enemy:   buf[4],
 			}
 		}
 		// DO something with it
@@ -180,16 +187,32 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		}
 		n := buf[0]
 		changes := make([]Changes, n)
+
+		flip := false // If we see that our start position is one of werewolf, we need to flip ally and enemy
 		for i := 0; i < int(n); i++ {
 			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
 				return MAP, err
 			}
+
 			changes[i] = Changes{
-				X:          buf[0],
-				Y:          buf[1],
-				Humans:     buf[2],
-				Vampires:   buf[3],
-				Werewolves: buf[4],
+				Coords: Coordinates{
+					X: buf[0],
+					Y: buf[1],
+				},
+				Neutral: buf[2],
+				Ally:    buf[3], // Vampire
+				Enemy:   buf[4], // Werewolf
+			}
+
+			// Set to true if and only if we're actually werewolves
+			flip = flip || (changes[i].Coords == c.ourRaceCoord && changes[i].Enemy > 0)
+
+		}
+
+		if flip {
+			for i, c := range changes {
+				c.Ally, c.Enemy = c.Enemy, c.Ally
+				changes[i] = c
 			}
 		}
 
@@ -220,5 +243,40 @@ func (c *TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
 	if command != assertCmd {
 		return fmt.Errorf("should have received %s but got %s instead", assertCmd, command)
 	}
+	return nil
+}
+
+// Init with the name
+func (c *TCPClient) Init(name string) error {
+	// Send name
+	err := c.SendName("langorou")
+	if err != nil {
+		return err
+	}
+
+	// Receive SET
+	err = c.ReceiveSpecificCommand(SET)
+	if err != nil {
+		return err
+	}
+
+	// Receive HUM
+	err = c.ReceiveSpecificCommand(HUM)
+	if err != nil {
+		return err
+	}
+
+	// Receive HME
+	err = c.ReceiveSpecificCommand(HME)
+	if err != nil {
+		return err
+	}
+
+	// Receive MAP
+	err = c.ReceiveSpecificCommand(MAP)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

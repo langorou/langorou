@@ -41,25 +41,7 @@ func main() {
 	c, err := client.NewTCPClient(addr)
 	failIf(err, "")
 
-	// Send name
-	err = c.SendName("langorou")
-	failIf(err, "")
-
-	// Receive SET
-	err = c.ReceiveSpecificCommand(client.SET)
-	failIf(err, "")
-
-	// Receive HUM
-	err = c.ReceiveSpecificCommand(client.HUM)
-	failIf(err, "")
-
-	// Receive HME
-	err = c.ReceiveSpecificCommand(client.HME)
-	failIf(err, "")
-
-	// Receive MAP
-	err = c.ReceiveSpecificCommand(client.MAP)
-	failIf(err, "")
+	failIf(c.Init("langorou"), "")
 
 	os.Exit(0)
 }

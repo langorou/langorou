@@ -5,8 +5,8 @@ type race uint
 const (
 	// Empty race
 	Empty race = iota
-	// Villager race
-	Villager
+	// Neutral race
+	Neutral
 	// Ally race
 	Ally
 	// Enemy race
@@ -14,7 +14,7 @@ const (
 )
 
 type cell struct {
-	count uint
+	count uint8
 	race  race
 }
 
