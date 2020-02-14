@@ -10,9 +10,9 @@ type Coordinates struct {
 type Changes struct {
 	X          uint8
 	Y          uint8
-	Humans     uint
-	Vampires   uint
-	Werewolves uint
+	Humans     uint8
+	Vampires   uint8
+	Werewolves uint8
 }
 
 // Move is an allowed move
@@ -32,11 +32,11 @@ type Player interface {
 // Server represents the server -> player protocol
 type Server interface {
 	// Server -> Player
-	Set(n uint8, m uint8) error
-	Hum(n uint8, coords []Coordinates) error
-	Hme(x uint8, y uint8) error
-	Upd(n uint8, changes []Changes) error
-	Map(n uint8, changes []Changes) error
+	Set(n uint8, m uint8)
+	Hum(coords []Coordinates)
+	Hme(x uint8, y uint8)
+	Upd(changes []Changes)
+	Map(changes []Changes)
 	End() error
 }
 
