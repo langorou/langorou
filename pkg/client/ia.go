@@ -82,13 +82,12 @@ func evaluateNextState(s state, movs []Move) state {
 	return newState
 }
 
-func scoreState(s state) float64 {
+func scoreState(potSta PotentialState) float64 {
 
 	// Apply the change on the state
-	newState := s
 
 	h := 0.
-	for _, row := range newState {
+	for _, row := range potSta.s {
 		for _, c := range row {
 			switch c.race {
 			case Empty:
@@ -103,5 +102,5 @@ func scoreState(s state) float64 {
 		}
 	}
 
-	return h
+	return h * potSta.prob
 }
