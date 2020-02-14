@@ -106,7 +106,7 @@ func (c *TCPClient) SendMove(moves []Move) error {
 }
 
 // ReceiveMsg from the server and parse it
-func (c TCPClient) ReceiveMsg() (ServerCmd, error) {
+func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 	reader := bufio.NewReader(c.conn)
 	buf := make([]byte, 9)
 	if _, err := io.ReadFull(reader, buf[:3]); err != nil { // Read len(buf) chars
