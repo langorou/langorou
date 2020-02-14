@@ -1,6 +1,6 @@
 package client
 
-type race int
+type race uint
 
 const (
 	// Empty race
