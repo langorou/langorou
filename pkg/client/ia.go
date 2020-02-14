@@ -69,17 +69,17 @@ func evaluateMoveOutcome(s state, mov Move) []PotentialState {
 
 }
 
-func evaluateNextState(s state, movs []Move) state {
+func computePotentialNextStates(curState state, movs []Move) []PotentialState {
 	// All moves are necesseraly independent, we'll have less 2**len(moves) possible states (max 2 outputs per move)
 
 	// Make a deep copy of the state -> is it necessary ?
-	newState := s.deepCopy()
+	potentialNextStates := make([]PotentialState, len(movs))
 
 	for _, mov := range movs {
-		_ = mov
+		potentialNextStates = append(potentialNextStates, evaluateMoveOutcome(curState, mov)...)
 	}
 
-	return newState
+	return potentialNextStates
 }
 
 func scoreState(potSta PotentialState) float64 {
