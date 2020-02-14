@@ -85,7 +85,7 @@ func (c TCPClient) SendName(name string) error {
 }
 
 // SendMove to the server
-func (c TCPClient) SendMove(n uint8, moves []Move) error {
+func (c *TCPClient) SendMove(moves []Move) error {
 
 	msg := make([]byte, 3+1+5*n)
 
