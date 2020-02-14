@@ -3,12 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"strconv"
 
 	"github.com/langorou/langorou/pkg/client"
 )
+
+func failIf(err error, msg string) {
+	if err != nil {
+		log.Fatalf("error %s: %v", msg, err)
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -18,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// We might to use localhost...
+	// We might use localhost...
 	// ip := net.ParseIP(args[0])
 	// if ip == nil {
 	// 	fmt.Printf("invalid IP address: %s\n", args[0])
@@ -26,54 +33,33 @@ func main() {
 	// }
 
 	_, err := strconv.ParseUint(args[1], 10, 16) // 0 <= port <= 65535
-	if err != nil {
-		fmt.Printf("invalid port %s, should be between 0 and 65535\n", args[1])
-		os.Exit(1)
-	}
+	failIf(err, fmt.Sprintf("invalid port %s, should be between 0 and 65535\n", args[1]))
 
 	addr := net.JoinHostPort(args[0], args[1])
 	fmt.Printf("connecting to %s\n", addr)
 
 	c, err := client.NewTCPClient(addr)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	failIf(err, "")
 
 	// Send name
 	err = c.SendName("langorou")
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
+	failIf(err, "")
 
 	// Receive SET
 	err = c.ReceiveSpecificCommand(client.SET)
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
+	failIf(err, "")
 
 	// Receive HUM
 	err = c.ReceiveSpecificCommand(client.HUM)
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
+	failIf(err, "")
 
 	// Receive HME
 	err = c.ReceiveSpecificCommand(client.HME)
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
+	failIf(err, "")
 
 	// Receive MAP
 	err = c.ReceiveSpecificCommand(client.MAP)
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		os.Exit(1)
-	}
+	failIf(err, "")
 
 	os.Exit(0)
 }

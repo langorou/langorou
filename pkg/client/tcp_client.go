@@ -74,7 +74,6 @@ func (c *TCPClient) SendName(name string) error {
 	}
 
 	msg := make([]byte, 3+1+t)
-	fmt.Println(3 + 1 + t)
 	copy(msg[:3], []byte("NME"))
 	msg[3] = byte(uint8(t))
 	copy(msg[4:], []byte(name))
@@ -87,12 +86,13 @@ func (c *TCPClient) SendName(name string) error {
 // SendMove to the server
 func (c *TCPClient) SendMove(moves []Move) error {
 
+	n := len(moves)
 	msg := make([]byte, 3+1+5*n)
 
 	copy(msg[:3], []byte("MOV"))
-	msg[3] = byte(n)
+	msg[3] = byte(uint8(n))
 
-	for i := 0; i < int(n); i++ {
+	for i := 0; i < n; i++ {
 		msg[4+5*i] = byte(moves[i].Start.X)
 		msg[4+5*i+1] = byte(moves[i].Start.Y)
 		msg[4+5*i+2] = byte(moves[i].N)
@@ -108,8 +108,8 @@ func (c *TCPClient) SendMove(moves []Move) error {
 // ReceiveMsg from the server and parse it
 func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 	reader := bufio.NewReader(c.conn)
-	buf := make([]byte, 9)
-	if _, err := io.ReadFull(reader, buf[:3]); err != nil { // Read len(buf) chars
+	buf := make([]byte, 5)                                  // we read at max 5 consecutive bytes
+	if _, err := io.ReadFull(reader, buf[:3]); err != nil { // Read len(buf) chars, here 3 bytes
 		return 0, err
 	}
 
@@ -212,7 +212,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 }
 
 // ReceiveSpecificCommand returns an error if the command is not as expected
-func (c TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
+func (c *TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
 	command, err := c.ReceiveMsg()
 	if err != nil {
 		return err
