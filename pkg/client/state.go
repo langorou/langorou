@@ -7,10 +7,10 @@ const (
 	Empty race = iota
 	// Villager race
 	Villager
-	// Werewolf race
-	Werewolf
-	// Vampire race
-	Vampire
+	// Ally race
+	Ally
+	// Enemy race
+	Enemy
 )
 
 type cell struct {
