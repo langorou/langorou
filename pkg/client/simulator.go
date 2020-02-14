@@ -1,58 +1,9 @@
 package client
 
-// from github.com/Succo/twilight
-
-import "math/rand"
-
-func simulateMonsterFight(E1, E2 int) (survivor int, victory bool) {
-	P := getProba(E1, E2, false)
-	// FIGHT
-	if rand.Float64() < P {
-		// Victory
-		for i := 0; i < E1; i++ {
-			// each unit has a chance to survive
-			if rand.Float64() < P {
-				survivor++
-			}
-		}
-		return survivor, true
-	}
-	// Loss
-	for i := 0; i < E2; i++ {
-		// each unit has a chance to survive
-		if rand.Float64() < (1 - P) {
-			survivor++
-		}
-	}
-	return survivor, false
-
-}
-
-func simulateHumanFight(E1, E2 int) (survivor int, victory bool) {
-	// E2 is always the human because it cannot move
-	P := getProba(E1, E2, true)
-	// FIGHT
-	if rand.Float64() < P {
-		// Victory
-		for i := 0; i < E1+E2; i++ { // We can convert human with a P chance for a random fight
-			if rand.Float64() < P {
-				survivor++
-			}
-		}
-		return survivor, true
-	}
-	// Loss
-	for i := 0; i < E2; i++ {
-		if rand.Float64() < (1 - P) {
-			survivor++
-		}
-	}
-	return survivor, false
-
-}
+// Adapted from github.com/Succo/twilight, but we should use float since we evaluate probability of winning.
 
 // getProba for a fight
-func getProba(E1, E2 int, involveHumans bool) float64 {
+func getProba(E1, E2 float64, involveHumans bool) float64 {
 
 	var cste float64
 	if involveHumans {
@@ -62,16 +13,16 @@ func getProba(E1, E2 int, involveHumans bool) float64 {
 	}
 
 	// True by property
-	if float64(E1) >= cste*float64(E2) {
+	if E1 >= cste*E2 {
 		return 1
 	}
 
 	if E1 == E2 {
 		return 0.5
 	} else if E1 < E2 {
-		return float64(E1) / (2 * float64(E2))
+		return E1 / (2 * E2)
 	} else {
-		return (float64(E1) / float64(E2)) - 0.5
+		return (E1 / E2) - 0.5
 	}
 }
 

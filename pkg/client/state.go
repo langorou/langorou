@@ -14,10 +14,17 @@ const (
 )
 
 type cell struct {
-	count uint8
+	count float64 // float used for potential state, used in heuristic computation
 	race  race
 }
 
-type state struct {
-	grid [][]cell
+type state [][]cell
+
+func (s state) deepCopy() state {
+	newState := make([][]cell, len(s))
+	for i := range s {
+		newState[i] = make([]cell, len(s[i]))
+		copy(newState[i], s[i])
+	}
+	return newState
 }
