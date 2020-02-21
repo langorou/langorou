@@ -228,6 +228,8 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 			}
 
 			c.isWerewolf = true
+		} else {
+			log.Printf("%s: we are vampires", command)
 		}
 
 		c.game.Map(changes)

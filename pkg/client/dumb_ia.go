@@ -27,7 +27,6 @@ func (dia *DumbIA) Play(state state) []Move {
 
 				return []Move{
 					{
-						// TODO: figure out if this is correct for y
 						Start: Coordinates{X: uint8(x), Y: uint8(y)},
 						// Everyone moves !
 						N:   uint8(cell.count),
