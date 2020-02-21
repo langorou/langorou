@@ -78,19 +78,22 @@ func (c *TCPClient) SendName() error {
 // SendMove to the server
 func (c *TCPClient) SendMove(moves []Move) error {
 
-	n := len(moves)
-	msg := make([]byte, 3+1+5*n)
+	msg := make([]byte, 3+1+5*len(moves))
 
 	copy(msg[:3], "MOV")
-	msg[3] = uint8(n)
+	msg[3] = uint8(len(moves))
 
-	for i := 0; i < n; i++ {
-		msg[4+5*i] = moves[i].Start.X
-		msg[4+5*i+1] = moves[i].Start.Y
-		msg[4+5*i+2] = moves[i].N
-		msg[4+5*i+3] = moves[i].End.X
-		msg[4+5*i+4] = moves[i].End.Y
+	log.Printf("===")
+	log.Printf("Sending %d moves:", len(moves))
+	for i, move := range moves {
+		log.Printf("Move: %+v", move)
+		msg[4+5*i] = move.Start.X
+		msg[4+5*i+1] = move.Start.Y
+		msg[4+5*i+2] = move.N
+		msg[4+5*i+3] = move.End.X
+		msg[4+5*i+4] = move.End.Y
 	}
+	log.Printf("===")
 
 	_, err := c.conn.Write(msg)
 
@@ -307,5 +310,15 @@ func (c *TCPClient) init() error {
 		return err
 	}
 
-	return nil
+	for  {
+		// Wait for update
+		if err = c.ReceiveSpecificCommand(UPD); err != nil {
+			return err
+		}
+
+		// Send our moves
+		if err := c.SendMove(c.game.Mov()); err != nil {
+			return err
+		}
+	}
 }
