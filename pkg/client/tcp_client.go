@@ -47,7 +47,7 @@ type TCPClient struct {
 	conn         net.Conn
 	ourRaceCoord Coordinates
 	isWerewolf   bool // We assume we're a vampire
-	game *Game
+	game         *Game
 }
 
 // NewTCPClient creates a new TCP client
@@ -126,8 +126,11 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		}
 		n := buf[0]
 		m := buf[1]
-		// DO something with it
-		_, _ = n, m
+
+		log.Printf("%s: set the map size to (%d, %d)", command, n, m)
+
+		c.game.Set(n, m)
+
 		return SET, nil
 
 	case "HUM":
@@ -194,7 +197,8 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 				}
 			}
 		}
-		// DO something with it
+		log.Printf("%s: received %d changes", command, n)
+		c.game.Upd(changes)
 		return UPD, nil
 
 	case "MAP":
@@ -224,8 +228,10 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 			flip = flip || (changes[i].Coords == c.ourRaceCoord && changes[i].Enemy > 0)
 
 		}
+		log.Printf("%s: received %d changes", command, n)
 
 		if flip {
+			log.Printf("%s: we are werewolves", command)
 			for i, c := range changes {
 				c.Ally, c.Enemy = c.Enemy, c.Ally
 				changes[i] = c
@@ -234,21 +240,22 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 			c.isWerewolf = true
 		}
 
-		// DO something with it
+		c.game.Map(changes)
 
 		return MAP, nil
 
 	case "END":
 		// Next Game
-
+		log.Printf("%s: end of the game", command)
 		// we reset some variables
 		c.isWerewolf = false
 		c.ourRaceCoord = Coordinates{}
 
-		return END, nil
+		return END, c.game.End()
 
 	case "BYE":
 		// Server stop
+		log.Printf("%s: server said bye", command)
 		return BYE, nil
 
 	default:
