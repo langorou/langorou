@@ -268,6 +268,7 @@ func (c *TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
 
 // Start with the name
 func (c *TCPClient) Start() error {
+	// TODO: it's possible to receive BYE here, if we restarted a game
 
 	if err := c.init(); err != nil {
 		return fmt.Errorf("an error occurred during init: %s", err)
@@ -326,7 +327,7 @@ func (c *TCPClient) init() error {
 			return nil
 		case END:
 			log.Printf("Received END, getting ready for the next game...")
-			return c.init()
+			return c.Start()
 		default:
 			return fmt.Errorf("received unexpected command: %s", cmd)
 		}
