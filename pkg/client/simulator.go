@@ -2,11 +2,12 @@ package client
 
 // Adapted from github.com/Succo/twilight, but we should use float since we evaluate probability of winning.
 
-// getProba for a fight
-func getProba(E1, E2 float64, involveHumans bool) float64 {
+// getProba of winning for the attaquant 1 with an effectif E1, agains E2
+// E2 might be Neutral
+func getProba(E1, E2 float64, E2isNeutral bool) float64 {
 
 	var cste float64
-	if involveHumans {
+	if E2isNeutral {
 		cste = 1
 	} else {
 		cste = 1.5

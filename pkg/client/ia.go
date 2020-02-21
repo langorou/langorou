@@ -13,7 +13,7 @@ func evaluateMoveOutcome(s state, mov Move) []PotentialState {
 	endRace := s[mov.End.X][mov.End.Y].race
 	endCount := s[mov.End.X][mov.End.Y].count
 
-	if endCount == 0 {
+	if s[mov.End.X][mov.End.Y].isEmpty() {
 		// nobody on there
 		newState := s.deepCopy()
 		newState[mov.Start.X][mov.Start.Y].count -= float64(mov.N)
@@ -44,7 +44,7 @@ func evaluateMoveOutcome(s state, mov Move) []PotentialState {
 		newState := s.deepCopy()
 		newState[mov.Start.X][mov.Start.Y].count -= float64(mov.N)
 		newState[mov.End.X][mov.End.Y] = cell{
-			count: float64(mov.N) + float64(isNeutral)*endCount, // if we totally win against Neutral, we convert all of them
+			count: float64(mov.N) + isNeutral*endCount, // if we totally win against Neutral, we convert all of them
 			race:  startRace,
 		}
 		return []PotentialState{PotentialState{s: newState, prob: 1}}
@@ -52,8 +52,9 @@ func evaluateMoveOutcome(s state, mov Move) []PotentialState {
 
 	winState := s.deepCopy()
 	winState[mov.Start.X][mov.Start.Y].count -= float64(mov.N)
-	winState[mov.End.X][mov.End.Y] = cell{count: float64(mov.N)*P + float64(isNeutral)*endCount, // For each ally, he has P chance to survive. Against neutral, we have P chance to convert them
-		race: startRace,
+	winState[mov.End.X][mov.End.Y] = cell{
+		count: float64(mov.N)*P + isNeutral*endCount*P, // For each ally, he has P chance to survive. Against neutral, we have P chance to convert them
+		race:  startRace,
 	}
 
 	lossState := s.deepCopy()
@@ -70,7 +71,6 @@ func evaluateMoveOutcome(s state, mov Move) []PotentialState {
 }
 
 func computePotentialNextStates(curState state, movs []Move) []PotentialState {
-	// All moves are necesseraly independent, we'll have less 2**len(moves) possible states (max 2 outputs per move)
 
 	// Make a deep copy of the state -> is it necessary ?
 	potentialStatesPerMov := make([][]PotentialState, len(movs))
