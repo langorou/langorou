@@ -1,9 +1,7 @@
 package client
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"log"
 	"net"
 
@@ -18,29 +16,18 @@ import (
 // > The Go net package recommends using these interface types rather than the concrete ones (TCPConn or UDPConn).
 // > But by using them, you lose specific methods such as SetKeepAlive or TCPConn and SetReadBuffer of UDPConn, unless you do a type cast. It is your choice.
 
-type ClientMsg int
+type ServerCmd string
 
 const (
-	NME ClientMsg = iota
-	MOV
+	UNKNOWN ServerCmd = "UNKNOWN"
+	SET = "SET"
+	HUM = "HUM"
+	HME = "HME"
+	MAP = "MAP"
+	UPD = "UPD"
+	END = "END"
+	BYE= "BYE"
 )
-
-type ServerCmd int
-
-const (
-	_ ServerCmd = iota
-	SET
-	HUM
-	HME
-	MAP
-	UPD
-	END
-	BYE
-)
-
-func (cmd ServerCmd) String() string {
-	return [...]string{"UNKNOWN", "SET", "HUM", "HME", "MAP", "UPD", "END", "BYE"}[cmd]
-}
 
 // TCPClient handles the connection to the server, and also encapsulate the game
 type TCPClient struct {
@@ -112,16 +99,16 @@ func (c *TCPClient) SendMove(moves []Move) error {
 
 // ReceiveMsg from the server and parse it
 func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
-	reader := bufio.NewReader(c.conn)
 	buf := make([]byte, 5)                                  // we read at max 5 consecutive bytes
-	if _, err := io.ReadFull(reader, buf[:3]); err != nil { // Read len(buf) chars, here 3 bytes
-		return 0, err
+	if _, err := c.conn.Read(buf[:3]); err != nil { // Read len(buf) chars, here 3 bytes
+		return UNKNOWN, err
 	}
 
 	command := string(buf[:3])
+	log.Printf("Received command: %s", command)
 	switch command {
 	case "SET":
-		if _, err := io.ReadFull(reader, buf[:2]); err != nil {
+		if _, err := c.conn.Read(buf[:2]); err != nil {
 			return SET, err
 		}
 		n := buf[0]
@@ -134,13 +121,13 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		return SET, nil
 
 	case "HUM":
-		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
+		if _, err := c.conn.Read(buf[:1]); err != nil {
 			return HUM, err
 		}
 		n := buf[0]
 		coords := make([]Coordinates, n)
 		for i := 0; i < int(n); i++ {
-			if _, err := io.ReadFull(reader, buf[:2]); err != nil {
+			if _, err := c.conn.Read(buf[:2]); err != nil {
 				return HUM, err
 			}
 			coords[i] = Coordinates{
@@ -153,7 +140,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		return HUM, nil
 
 	case "HME":
-		if _, err := io.ReadFull(reader, buf[:2]); err != nil {
+		if _, err := c.conn.Read(buf[:2]); err != nil {
 			return HME, err
 		}
 		x := buf[0]
@@ -165,13 +152,13 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		return HME, nil
 
 	case "UPD":
-		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
+		if _, err := c.conn.Read(buf[:1]); err != nil {
 			return UPD, err
 		}
 		n := buf[0]
 		changes := make([]Changes, n)
 		for i := 0; i < int(n); i++ {
-			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
+			if _, err := c.conn.Read(buf[:5]); err != nil {
 				return UPD, err
 			}
 
@@ -202,7 +189,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		return UPD, nil
 
 	case "MAP":
-		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
+		if _, err := c.conn.Read(buf[:1]); err != nil {
 			return MAP, err
 		}
 		n := buf[0]
@@ -210,7 +197,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 
 		flip := false // If we see that our start position is one of werewolf, we need to flip ally and enemy
 		for i := 0; i < int(n); i++ {
-			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
+			if _, err := c.conn.Read(buf[:5]); err != nil {
 				return MAP, err
 			}
 
@@ -259,7 +246,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		return BYE, nil
 
 	default:
-		return 0, fmt.Errorf("invalid command from server : %s", command)
+		return UNKNOWN, fmt.Errorf("invalid command from server : %s", command)
 	}
 
 }
@@ -276,8 +263,20 @@ func (c *TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
 	return nil
 }
 
-// Init with the name
-func (c *TCPClient) Init() error {
+// Start with the name
+func (c *TCPClient) Start() error {
+
+	if err := c.init(); err != nil {
+		return fmt.Errorf("an error occurred during init: %s", err)
+	}
+	log.Print("Successfully init !")
+
+	log.Printf("TODO")
+
+	return nil
+}
+
+func (c *TCPClient) init() error {
 	// Send name
 	err := c.SendName()
 	if err != nil {

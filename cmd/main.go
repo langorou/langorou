@@ -17,9 +17,9 @@ func failIf(err error, msg string) {
 	}
 }
 
-const Name = "LANGOROU"
 
 func main() {
+	namePtr := flag.String("name", "langorou", "name of the player")
 	flag.Parse()
 	args := flag.Args()
 	if len(args) < 2 {
@@ -27,23 +27,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	// We might use localhost...
-	// ip := net.ParseIP(args[0])
-	// if ip == nil {
-	// 	fmt.Printf("invalid IP address: %s\n", args[0])
-	// 	os.Exit(1)
-	// }
-
 	_, err := strconv.ParseUint(args[1], 10, 16) // 0 <= port <= 65535
 	failIf(err, fmt.Sprintf("invalid port %s, should be between 0 and 65535\n", args[1]))
 
 	addr := net.JoinHostPort(args[0], args[1])
-	fmt.Printf("connecting to %s\n", addr)
+	log.Printf("connecting to %s with name: %s", addr, *namePtr)
 
-	c, err := client.NewTCPClient(addr, Name, client.NewDumbIA())
+	c, err := client.NewTCPClient(addr, *namePtr, client.NewDumbIA())
 	failIf(err, "")
 
-	failIf(c.Init(), "")
+	failIf(c.Start(), "")
 
 	os.Exit(0)
 }
