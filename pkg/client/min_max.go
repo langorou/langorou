@@ -36,6 +36,9 @@ func negamaxAlpha(state state, strategy string, alpha float64, player uint8, max
 	}
 	return bestTurn, maxScore
 
+func get_possible_moves_from_cell(coord Coordinates){
+	//TODO returns possible moves from a cell
+	//we don't consider the splits for now
 }
 
 // getMoves returns a list of moves
@@ -46,22 +49,26 @@ func getMoves(state state, strategy string, player uint8) [][]Move {
 	for i := range movesMat {
 		movesMat[i] = []Move{}
 
-		for j := 0; j < max; j++ {
-			movesMat[i][j] = Move{
-				Start: Coordinates{X: uint8(i), Y: uint8(j)},
-				N:     1,
-				End:   Coordinates{X: uint8(i), Y: uint8(j + 1)},
+func turn_list (state state, strategy string, playerRace uint8) [][]Move {
+	//renvoie une liste de de liste de move
+	var output [][]Moves
+	
+	// cartesian product of all moves
+	for i, row := range state{
+		for j, cell := range row{
+			if cell.cout > 0 && cell.race == player
+				var output2 [][]Moves
+				for _, move in get_possible_moves_from_cell(Coordinates{X:j,Y:i}) {
+					for _, move_list := range output {
+						output2 = append(output2, append(move_list,move))
+				}
+				output = output2
 			}
+		} 
 		}
 	}
 
-	return movesMat
-}
 
-func applyMoves(state state, player uint8, moveList []Move) []PotentialState {
-	// TODO
-	return nil
-}
 
 func undoMoves(state state, player uint8, moveList []Move) {
 	//TODO
