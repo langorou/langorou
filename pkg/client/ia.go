@@ -36,4 +36,6 @@ func (dia *DumbIA) Play(state state) []Move {
 			}
 		}
 	}
+
+	panic("SHOULD NOT HAPPEN ! DUMB IA did not find any valid move")
 }
