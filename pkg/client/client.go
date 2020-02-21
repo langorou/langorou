@@ -8,11 +8,10 @@ type Coordinates struct {
 
 // Changes is an update of the board sent by the server
 type Changes struct {
-	X          uint8
-	Y          uint8
-	Humans     uint8
-	Vampires   uint8
-	Werewolves uint8
+	Coords  Coordinates
+	Neutral uint8
+	Ally    uint8
+	Enemy   uint8
 }
 
 // Move is an allowed move
@@ -34,7 +33,7 @@ type Server interface {
 	// Server -> Player
 	Set(n uint8, m uint8)
 	Hum(coords []Coordinates)
-	Hme(x uint8, y uint8)
+	// Hme(x uint8, y uint8) handled by TCP Client
 	Upd(changes []Changes)
 	Map(changes []Changes)
 	End() error

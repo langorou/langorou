@@ -5,19 +5,30 @@ type race uint
 const (
 	// Empty race
 	Empty race = iota
-	// Villager race
-	Villager
-	// Werewolf race
-	Werewolf
-	// Vampire race
-	Vampire
+	// Neutral race
+	Neutral
+	// Ally race
+	Ally
+	// Enemy race
+	Enemy
 )
 
 type cell struct {
-	count uint
+	count float64 // float used for potential state, used in heuristic computation
 	race  race
 }
 
-type state struct {
-	grid [][]cell
+func (c *cell) isEmpty() bool {
+	return c.count == 0
+}
+
+type state [][]cell
+
+func (s state) deepCopy() state {
+	newState := make([][]cell, len(s))
+	for i := range s {
+		newState[i] = make([]cell, len(s[i]))
+		copy(newState[i], s[i])
+	}
+	return newState
 }

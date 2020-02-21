@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"net"
 
 	"github.com/langorou/langorou/pkg/utils"
@@ -13,11 +14,9 @@ import (
 // https://ipfs.io/ipfs/QmfYeDhGH9bZzihBUDEQbCbTc5k5FZKURMUoUvfmc27BwL/socket/tcp_sockets.html
 
 // About net.Conn vs net.TCPConn :
-// > This interface has primary methods ReadFrom and WriteTo to handle packet reads and writes.
-// > The Go net package recommends using these interface types rather than the concrete ones.
+// > This interface (net.Conn) has primary methods ReadFrom and WriteTo to handle packet reads and writes.
+// > The Go net package recommends using these interface types rather than the concrete ones (TCPConn or UDPConn).
 // > But by using them, you lose specific methods such as SetKeepAlive or TCPConn and SetReadBuffer of UDPConn, unless you do a type cast. It is your choice.
-
-// TCPClient connects to the game server
 
 type ClientMsg int
 
@@ -43,8 +42,11 @@ func (cmd ServerCmd) String() string {
 	return [...]string{"UNKNOWN", "SET", "HUM", "HME", "MAP", "UPD", "END", "BYE"}[cmd]
 }
 
+// TCPClient handles the connection to the server, and also encapsulate the game
 type TCPClient struct {
-	conn net.Conn
+	conn         net.Conn
+	ourRaceCoord Coordinates
+	isWerewolf   bool // We assume we're a vampire
 }
 
 // NewTCPClient creates a new TCP client
@@ -149,8 +151,10 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		}
 		x := buf[0]
 		y := buf[1]
-		// DO something with it
-		_, _ = x, y
+
+		c.ourRaceCoord = Coordinates{X: x, Y: y}
+		log.Printf("new coords: %+v", c.ourRaceCoord)
+
 		return HME, nil
 
 	case "UPD":
@@ -163,12 +167,27 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
 				return UPD, err
 			}
-			changes[i] = Changes{
-				X:          buf[0],
-				Y:          buf[1],
-				Humans:     buf[2],
-				Vampires:   buf[3],
-				Werewolves: buf[4],
+
+			if c.isWerewolf {
+				changes[i] = Changes{
+					Coords: Coordinates{
+						X: buf[0],
+						Y: buf[1],
+					},
+					Neutral: buf[2],
+					Ally:    buf[4], // buf[4] represents the number of Werewolves
+					Enemy:   buf[3], // buf[3] represents the number of Vampires
+				}
+			} else {
+				changes[i] = Changes{
+					Coords: Coordinates{
+						X: buf[0],
+						Y: buf[1],
+					},
+					Neutral: buf[2],
+					Ally:    buf[3], // buf[3] represents the number of Vampires
+					Enemy:   buf[4], // buf[4] represents the number of Werewolves
+				}
 			}
 		}
 		// DO something with it
@@ -180,17 +199,35 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		}
 		n := buf[0]
 		changes := make([]Changes, n)
+
+		flip := false // If we see that our start position is one of werewolf, we need to flip ally and enemy
 		for i := 0; i < int(n); i++ {
 			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
 				return MAP, err
 			}
+
 			changes[i] = Changes{
-				X:          buf[0],
-				Y:          buf[1],
-				Humans:     buf[2],
-				Vampires:   buf[3],
-				Werewolves: buf[4],
+				Coords: Coordinates{
+					X: buf[0],
+					Y: buf[1],
+				},
+				Neutral: buf[2],
+				Ally:    buf[3], // Vampire
+				Enemy:   buf[4], // Werewolf
 			}
+
+			// Set to true if and only if we're actually werewolves
+			flip = flip || (changes[i].Coords == c.ourRaceCoord && changes[i].Enemy > 0)
+
+		}
+
+		if flip {
+			for i, c := range changes {
+				c.Ally, c.Enemy = c.Enemy, c.Ally
+				changes[i] = c
+			}
+
+			c.isWerewolf = true
 		}
 
 		// DO something with it
@@ -199,6 +236,11 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 
 	case "END":
 		// Next Game
+
+		// we reset some variables
+		c.isWerewolf = false
+		c.ourRaceCoord = Coordinates{}
+
 		return END, nil
 
 	case "BYE":
@@ -220,5 +262,40 @@ func (c *TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
 	if command != assertCmd {
 		return fmt.Errorf("should have received %s but got %s instead", assertCmd, command)
 	}
+	return nil
+}
+
+// Init with the name
+func (c *TCPClient) Init(name string) error {
+	// Send name
+	err := c.SendName("langorou")
+	if err != nil {
+		return err
+	}
+
+	// Receive SET
+	err = c.ReceiveSpecificCommand(SET)
+	if err != nil {
+		return err
+	}
+
+	// Receive HUM
+	err = c.ReceiveSpecificCommand(HUM)
+	if err != nil {
+		return err
+	}
+
+	// Receive HME
+	err = c.ReceiveSpecificCommand(HME)
+	if err != nil {
+		return err
+	}
+
+	// Receive MAP
+	err = c.ReceiveSpecificCommand(MAP)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
