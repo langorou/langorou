@@ -17,7 +17,6 @@ func failIf(err error, msg string) {
 	}
 }
 
-
 func main() {
 	namePtr := flag.String("name", "langorou", "name of the player")
 	flag.Parse()

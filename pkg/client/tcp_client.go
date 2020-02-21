@@ -20,13 +20,13 @@ type ServerCmd string
 
 const (
 	UNKNOWN ServerCmd = "UNKNOWN"
-	SET = "SET"
-	HUM = "HUM"
-	HME = "HME"
-	MAP = "MAP"
-	UPD = "UPD"
-	END = "END"
-	BYE= "BYE"
+	SET               = "SET"
+	HUM               = "HUM"
+	HME               = "HME"
+	MAP               = "MAP"
+	UPD               = "UPD"
+	END               = "END"
+	BYE               = "BYE"
 )
 
 // TCPClient handles the connection to the server, and also encapsulate the game
@@ -102,7 +102,7 @@ func (c *TCPClient) SendMove(moves []Move) error {
 
 // ReceiveMsg from the server and parse it
 func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
-	buf := make([]byte, 5)                                  // we read at max 5 consecutive bytes
+	buf := make([]byte, 5)                          // we read at max 5 consecutive bytes
 	if _, err := c.conn.Read(buf[:3]); err != nil { // Read len(buf) chars, here 3 bytes
 		return UNKNOWN, err
 	}
@@ -310,7 +310,7 @@ func (c *TCPClient) init() error {
 		return err
 	}
 
-	for  {
+	for {
 		cmd, err := c.ReceiveMsg()
 		if err != nil {
 			return err

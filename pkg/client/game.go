@@ -4,14 +4,14 @@ import "log"
 
 // Game implements the Client interface using a TCP server
 type Game struct {
-	state state
+	state      state
 	playerName string
-	ia IA
+	ia         IA
 }
 
 // NewGame creates a new TCP client
 func NewGame(name string, ia IA) *Game {
-	return &Game{playerName: name, ia:ia}
+	return &Game{playerName: name, ia: ia}
 }
 
 // Nme defines the player name
