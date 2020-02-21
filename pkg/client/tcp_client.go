@@ -1,9 +1,7 @@
 package client
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"log"
 	"net"
 
@@ -18,39 +16,29 @@ import (
 // > The Go net package recommends using these interface types rather than the concrete ones (TCPConn or UDPConn).
 // > But by using them, you lose specific methods such as SetKeepAlive or TCPConn and SetReadBuffer of UDPConn, unless you do a type cast. It is your choice.
 
-type ClientMsg int
+type ServerCmd string
 
 const (
-	NME ClientMsg = iota
-	MOV
+	UNKNOWN ServerCmd = "UNKNOWN"
+	SET               = "SET"
+	HUM               = "HUM"
+	HME               = "HME"
+	MAP               = "MAP"
+	UPD               = "UPD"
+	END               = "END"
+	BYE               = "BYE"
 )
-
-type ServerCmd int
-
-const (
-	_ ServerCmd = iota
-	SET
-	HUM
-	HME
-	MAP
-	UPD
-	END
-	BYE
-)
-
-func (cmd ServerCmd) String() string {
-	return [...]string{"UNKNOWN", "SET", "HUM", "HME", "MAP", "UPD", "END", "BYE"}[cmd]
-}
 
 // TCPClient handles the connection to the server, and also encapsulate the game
 type TCPClient struct {
 	conn         net.Conn
 	ourRaceCoord Coordinates
 	isWerewolf   bool // We assume we're a vampire
+	game         *Game
 }
 
 // NewTCPClient creates a new TCP client
-func NewTCPClient(addr string) (TCPClient, error) {
+func NewTCPClient(addr string, name string, ia IA) (TCPClient, error) {
 
 	// We might need to use net.DialTCP with https://golang.org/pkg/net/#TCPConn.SetKeepAlive
 	conn, err := net.Dial("tcp", addr)
@@ -60,11 +48,13 @@ func NewTCPClient(addr string) (TCPClient, error) {
 
 	return TCPClient{
 		conn: conn,
+		game: NewGame(name, ia),
 	}, nil
 }
 
 // SendName to the server
-func (c *TCPClient) SendName(name string) error {
+func (c *TCPClient) SendName() error {
+	name := c.game.Nme()
 	isASCII := utils.IsASCII(name)
 	if !isASCII {
 		return fmt.Errorf("%s is not a valid ASCII name", name)
@@ -88,19 +78,22 @@ func (c *TCPClient) SendName(name string) error {
 // SendMove to the server
 func (c *TCPClient) SendMove(moves []Move) error {
 
-	n := len(moves)
-	msg := make([]byte, 3+1+5*n)
+	msg := make([]byte, 3+1+5*len(moves))
 
 	copy(msg[:3], "MOV")
-	msg[3] = uint8(n)
+	msg[3] = uint8(len(moves))
 
-	for i := 0; i < n; i++ {
-		msg[4+5*i] = moves[i].Start.X
-		msg[4+5*i+1] = moves[i].Start.Y
-		msg[4+5*i+2] = moves[i].N
-		msg[4+5*i+3] = moves[i].End.X
-		msg[4+5*i+4] = moves[i].End.Y
+	log.Printf("===")
+	log.Printf("Sending %d moves:", len(moves))
+	for i, move := range moves {
+		log.Printf("Move: %+v", move)
+		msg[4+5*i] = move.Start.X
+		msg[4+5*i+1] = move.Start.Y
+		msg[4+5*i+2] = move.N
+		msg[4+5*i+3] = move.End.X
+		msg[4+5*i+4] = move.End.Y
 	}
+	log.Printf("===")
 
 	_, err := c.conn.Write(msg)
 
@@ -109,32 +102,35 @@ func (c *TCPClient) SendMove(moves []Move) error {
 
 // ReceiveMsg from the server and parse it
 func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
-	reader := bufio.NewReader(c.conn)
-	buf := make([]byte, 5)                                  // we read at max 5 consecutive bytes
-	if _, err := io.ReadFull(reader, buf[:3]); err != nil { // Read len(buf) chars, here 3 bytes
-		return 0, err
+	buf := make([]byte, 5)                          // we read at max 5 consecutive bytes
+	if _, err := c.conn.Read(buf[:3]); err != nil { // Read len(buf) chars, here 3 bytes
+		return UNKNOWN, err
 	}
 
 	command := string(buf[:3])
+	log.Printf("Received command: %s", command)
 	switch command {
 	case "SET":
-		if _, err := io.ReadFull(reader, buf[:2]); err != nil {
+		if _, err := c.conn.Read(buf[:2]); err != nil {
 			return SET, err
 		}
 		n := buf[0]
 		m := buf[1]
-		// DO something with it
-		_, _ = n, m
+
+		log.Printf("%s: set the map size to (%d, %d)", command, n, m)
+
+		c.game.Set(n, m)
+
 		return SET, nil
 
 	case "HUM":
-		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
+		if _, err := c.conn.Read(buf[:1]); err != nil {
 			return HUM, err
 		}
 		n := buf[0]
 		coords := make([]Coordinates, n)
 		for i := 0; i < int(n); i++ {
-			if _, err := io.ReadFull(reader, buf[:2]); err != nil {
+			if _, err := c.conn.Read(buf[:2]); err != nil {
 				return HUM, err
 			}
 			coords[i] = Coordinates{
@@ -142,29 +138,30 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 				Y: buf[1],
 			}
 		}
-		// DO something with it
+		log.Printf("%s: Received %d positions of humans", command, len(coords))
+		c.game.Hum(coords)
 		return HUM, nil
 
 	case "HME":
-		if _, err := io.ReadFull(reader, buf[:2]); err != nil {
+		if _, err := c.conn.Read(buf[:2]); err != nil {
 			return HME, err
 		}
 		x := buf[0]
 		y := buf[1]
 
 		c.ourRaceCoord = Coordinates{X: x, Y: y}
-		log.Printf("new coords: %+v", c.ourRaceCoord)
+		log.Printf("%s: Received our race coordinates: %+v", command, c.ourRaceCoord)
 
 		return HME, nil
 
 	case "UPD":
-		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
+		if _, err := c.conn.Read(buf[:1]); err != nil {
 			return UPD, err
 		}
 		n := buf[0]
 		changes := make([]Changes, n)
 		for i := 0; i < int(n); i++ {
-			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
+			if _, err := c.conn.Read(buf[:5]); err != nil {
 				return UPD, err
 			}
 
@@ -190,11 +187,12 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 				}
 			}
 		}
-		// DO something with it
+		log.Printf("%s: received %d changes", command, n)
+		c.game.Upd(changes)
 		return UPD, nil
 
 	case "MAP":
-		if _, err := io.ReadFull(reader, buf[:1]); err != nil {
+		if _, err := c.conn.Read(buf[:1]); err != nil {
 			return MAP, err
 		}
 		n := buf[0]
@@ -202,7 +200,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 
 		flip := false // If we see that our start position is one of werewolf, we need to flip ally and enemy
 		for i := 0; i < int(n); i++ {
-			if _, err := io.ReadFull(reader, buf[:5]); err != nil {
+			if _, err := c.conn.Read(buf[:5]); err != nil {
 				return MAP, err
 			}
 
@@ -220,35 +218,40 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 			flip = flip || (changes[i].Coords == c.ourRaceCoord && changes[i].Enemy > 0)
 
 		}
+		log.Printf("%s: received %d changes", command, n)
 
 		if flip {
+			log.Printf("%s: we are werewolves", command)
 			for i, c := range changes {
 				c.Ally, c.Enemy = c.Enemy, c.Ally
 				changes[i] = c
 			}
 
 			c.isWerewolf = true
+		} else {
+			log.Printf("%s: we are vampires", command)
 		}
 
-		// DO something with it
+		c.game.Map(changes)
 
 		return MAP, nil
 
 	case "END":
 		// Next Game
-
+		log.Printf("%s: end of the game", command)
 		// we reset some variables
 		c.isWerewolf = false
 		c.ourRaceCoord = Coordinates{}
 
-		return END, nil
+		return END, c.game.End()
 
 	case "BYE":
 		// Server stop
+		log.Printf("%s: server said bye", command)
 		return BYE, nil
 
 	default:
-		return 0, fmt.Errorf("invalid command from server : %s", command)
+		return UNKNOWN, fmt.Errorf("invalid command from server : %s", command)
 	}
 
 }
@@ -265,10 +268,23 @@ func (c *TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
 	return nil
 }
 
-// Init with the name
-func (c *TCPClient) Init(name string) error {
+// Start with the name
+func (c *TCPClient) Start() error {
+	// TODO: it's possible to receive BYE here, if we restarted a game
+
+	if err := c.init(); err != nil {
+		return fmt.Errorf("an error occurred during init: %s", err)
+	}
+	log.Print("Successfully init !")
+
+	log.Printf("TODO")
+
+	return nil
+}
+
+func (c *TCPClient) init() error {
 	// Send name
-	err := c.SendName("langorou")
+	err := c.SendName()
 	if err != nil {
 		return err
 	}
@@ -297,5 +313,25 @@ func (c *TCPClient) Init(name string) error {
 		return err
 	}
 
-	return nil
+	for {
+		cmd, err := c.ReceiveMsg()
+		if err != nil {
+			return err
+		}
+
+		switch cmd {
+		case UPD:
+			if err = c.SendMove(c.game.Mov()); err != nil {
+				return err
+			}
+		case BYE:
+			log.Printf("Received BYE, stopping the client...")
+			return nil
+		case END:
+			log.Printf("Received END, getting ready for the next game...")
+			return c.Start()
+		default:
+			return fmt.Errorf("received unexpected command: %s", cmd)
+		}
+	}
 }
