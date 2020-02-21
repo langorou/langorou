@@ -4,23 +4,23 @@ import "log"
 
 // Game implements the Client interface using a TCP server
 type Game struct {
-	state
+	state      state
 	playerName string
+	ia         IA
 }
 
 // NewGame creates a new TCP client
-func NewGame() (*Game, error) {
-	return &Game{}, nil
+func NewGame(name string, ia IA) *Game {
+	return &Game{playerName: name, ia: ia}
 }
 
 // Nme defines the player name
-func (g *Game) Nme(playerName string) string {
-	g.playerName = playerName
-	return playerName
+func (g *Game) Nme() string {
+	return g.playerName
 }
 
-func (T Game) Mov() []Move {
-	panic("implement me")
+func (g *Game) Mov() []Move {
+	return g.ia.Play(g.state)
 }
 
 // Set initialize an empty grid in the state
