@@ -1,0 +1,8 @@
+github.com/Succo/twilight v0.0.0-20180129152954-8bf8dbe35876 h1:8TjS11XEfby0BNZfwKNFP7E0MLxdsCqhpLg8nUvJmNw=
+github.com/Succo/twilight v0.0.0-20180129152954-8bf8dbe35876/go.mod h1:8ycNa4Qz4nI6Y2gPrWwhXqZ7omUf+sEu8IkcBFxK/IU=
+github.com/langorou/twilight v0.0.0-20200221102340-7363eef52e26 h1:TNn9wp5N0tnzKX93vFLUZGyQAkgKU2in+lVK6LIJa1M=
+github.com/langorou/twilight v0.0.0-20200221102340-7363eef52e26/go.mod h1:2Uj64yEAmO/Mu6BeZv+rF/IibuNO+jyshQd7VuS45ak=
+github.com/langorou/twilight v0.0.0-20200221102718-a42f48b9fac6 h1:LBzCn1fHM1A/0SkFe48HydFebSfE/AQlCwIZLJq10jE=
+github.com/langorou/twilight v0.0.0-20200221102718-a42f48b9fac6/go.mod h1:2Uj64yEAmO/Mu6BeZv+rF/IibuNO+jyshQd7VuS45ak=
+launchpad.net/xmlpath v0.0.0-20130614043138-000000000004 h1:B8nNZBUrx8YufDCAJjvO/lVs4GxXMQHyrjwJdJzXMFg=
+launchpad.net/xmlpath v0.0.0-20130614043138-000000000004/go.mod h1:vqyExLOM3qBx7mvYRkoxjSCF945s0mbe7YynlKYXtsA=
