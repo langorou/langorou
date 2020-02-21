@@ -47,10 +47,11 @@ type TCPClient struct {
 	conn         net.Conn
 	ourRaceCoord Coordinates
 	isWerewolf   bool // We assume we're a vampire
+	game *Game
 }
 
 // NewTCPClient creates a new TCP client
-func NewTCPClient(addr string) (TCPClient, error) {
+func NewTCPClient(addr string, name string) (TCPClient, error) {
 
 	// We might need to use net.DialTCP with https://golang.org/pkg/net/#TCPConn.SetKeepAlive
 	conn, err := net.Dial("tcp", addr)
@@ -60,11 +61,13 @@ func NewTCPClient(addr string) (TCPClient, error) {
 
 	return TCPClient{
 		conn: conn,
+		game: NewGame(name),
 	}, nil
 }
 
 // SendName to the server
-func (c *TCPClient) SendName(name string) error {
+func (c *TCPClient) SendName() error {
+	name := c.game.Nme()
 	isASCII := utils.IsASCII(name)
 	if !isASCII {
 		return fmt.Errorf("%s is not a valid ASCII name", name)
@@ -266,9 +269,9 @@ func (c *TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
 }
 
 // Init with the name
-func (c *TCPClient) Init(name string) error {
+func (c *TCPClient) Init() error {
 	// Send name
-	err := c.SendName("langorou")
+	err := c.SendName()
 	if err != nil {
 		return err
 	}

@@ -17,6 +17,8 @@ func failIf(err error, msg string) {
 	}
 }
 
+const Name = "LANGOROU"
+
 func main() {
 	flag.Parse()
 	args := flag.Args()
@@ -38,10 +40,10 @@ func main() {
 	addr := net.JoinHostPort(args[0], args[1])
 	fmt.Printf("connecting to %s\n", addr)
 
-	c, err := client.NewTCPClient(addr)
+	c, err := client.NewTCPClient(addr, Name)
 	failIf(err, "")
 
-	failIf(c.Init("langorou"), "")
+	failIf(c.Init(), "")
 
 	os.Exit(0)
 }

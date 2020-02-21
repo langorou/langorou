@@ -9,14 +9,13 @@ type Game struct {
 }
 
 // NewGame creates a new TCP client
-func NewGame() (*Game, error) {
-	return &Game{}, nil
+func NewGame(name string) *Game {
+	return &Game{playerName: name}
 }
 
 // Nme defines the player name
-func (g *Game) Nme(playerName string) string {
-	g.playerName = playerName
-	return playerName
+func (g *Game) Nme() string {
+	return g.playerName
 }
 
 func (T Game) Mov() []Move {
