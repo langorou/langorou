@@ -25,9 +25,9 @@ func (g *Game) Mov() []Move {
 
 // Set initialize an empty grid in the state
 func (g *Game) Set(n uint8, m uint8) {
-	g.state = make([][]cell, n)
+	g.state = make([][]cell, m)
 	for i := range g.state {
-		g.state[i] = make([]cell, m)
+		g.state[i] = make([]cell, n)
 	}
 }
 

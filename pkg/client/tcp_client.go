@@ -311,14 +311,24 @@ func (c *TCPClient) init() error {
 	}
 
 	for  {
-		// Wait for update
-		if err = c.ReceiveSpecificCommand(UPD); err != nil {
+		cmd, err := c.ReceiveMsg()
+		if err != nil {
 			return err
 		}
 
-		// Send our moves
-		if err := c.SendMove(c.game.Mov()); err != nil {
-			return err
+		switch cmd {
+		case UPD:
+			if err = c.SendMove(c.game.Mov()); err != nil {
+				return err
+			}
+		case BYE:
+			log.Printf("Received BYE, stopping the client...")
+			return nil
+		case END:
+			log.Printf("Received END, getting ready for the next game...")
+			return c.init()
+		default:
+			return fmt.Errorf("received unexpected command: %s", cmd)
 		}
 	}
 }

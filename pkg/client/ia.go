@@ -1,5 +1,7 @@
 package client
 
+import "time"
+
 type IA interface {
 	Play(state state) []Move
 }
@@ -11,16 +13,19 @@ func NewDumbIA() *DumbIA {
 }
 
 func (dia *DumbIA) Play(state state) []Move {
+	// Simulate computation
+	time.Sleep(time.Second)
+
 	for y, row := range state {
 		for x, cell := range row {
 			if cell.race == Ally && cell.count > 0 {
 
 				endY := y + 1
 				endX := x +1
-				if y >= len(state) - 1 {
+				if y == len(state) {
 					endY -= 2
 				}
-				if x >= len(row) - 1 {
+				if x == len(row) {
 					endX -= 2
 				}
 
