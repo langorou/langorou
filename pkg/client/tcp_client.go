@@ -145,7 +145,8 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 				Y: buf[1],
 			}
 		}
-		// DO something with it
+		log.Printf("%s: Received %d positions of humans", command, len(coords))
+		c.game.Hum(coords)
 		return HUM, nil
 
 	case "HME":
@@ -156,7 +157,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		y := buf[1]
 
 		c.ourRaceCoord = Coordinates{X: x, Y: y}
-		log.Printf("new coords: %+v", c.ourRaceCoord)
+		log.Printf("%s: Received our race coordinates: %+v", command, c.ourRaceCoord)
 
 		return HME, nil
 
