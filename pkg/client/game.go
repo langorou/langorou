@@ -44,13 +44,13 @@ func (g *Game) Upd(changes []Changes) {
 
 	for _, cha := range changes {
 		if cha.Neutral > 0 && cha.Ally == 0 && cha.Enemy == 0 {
-			g.state[cha.Coords.Y][cha.Coords.X].count = float64(cha.Neutral)
+			g.state[cha.Coords.Y][cha.Coords.X].count = cha.Neutral
 			g.state[cha.Coords.Y][cha.Coords.X].race = Neutral
 		} else if cha.Neutral == 0 && cha.Ally > 0 && cha.Enemy == 0 {
-			g.state[cha.Coords.Y][cha.Coords.X].count = float64(cha.Ally)
+			g.state[cha.Coords.Y][cha.Coords.X].count = cha.Ally
 			g.state[cha.Coords.Y][cha.Coords.X].race = Ally
 		} else if cha.Neutral == 0 && cha.Ally == 0 && cha.Enemy > 0 {
-			g.state[cha.Coords.Y][cha.Coords.X].count = float64(cha.Enemy)
+			g.state[cha.Coords.Y][cha.Coords.X].count = cha.Enemy
 			g.state[cha.Coords.Y][cha.Coords.X].race = Enemy
 		} else if cha.Neutral == 0 && cha.Ally == 0 && cha.Enemy == 0 {
 			g.state[cha.Coords.Y][cha.Coords.X].count = 0.

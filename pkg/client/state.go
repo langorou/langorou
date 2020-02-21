@@ -14,7 +14,7 @@ const (
 )
 
 type cell struct {
-	count float64 // float used for potential state, used in heuristic computation
+	count uint8 // float used for potential state, used in heuristic computation
 	race  race
 }
 

@@ -4,7 +4,7 @@ package client
 
 // getProba of winning for the attaquant 1 with an effectif E1, agains E2
 // E2 might be Neutral
-func getProba(E1, E2 float64, E2isNeutral bool) float64 {
+func getProba(E1, E2 uint8, E2isNeutral bool) float64 {
 
 	var cste float64
 	if E2isNeutral {
@@ -14,16 +14,16 @@ func getProba(E1, E2 float64, E2isNeutral bool) float64 {
 	}
 
 	// True by property
-	if E1 >= cste*E2 {
+	if float64(E1) >= cste*float64(E2) {
 		return 1
 	}
 
 	if E1 == E2 {
 		return 0.5
 	} else if E1 < E2 {
-		return E1 / (2 * E2)
+		return float64(E1) / (2 * float64(E2))
 	} else {
-		return (E1 / E2) - 0.5
+		return (float64(E1) / float64(E2)) - 0.5
 	}
 }
 
