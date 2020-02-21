@@ -51,7 +51,7 @@ type TCPClient struct {
 }
 
 // NewTCPClient creates a new TCP client
-func NewTCPClient(addr string, name string) (TCPClient, error) {
+func NewTCPClient(addr string, name string, ia IA) (TCPClient, error) {
 
 	// We might need to use net.DialTCP with https://golang.org/pkg/net/#TCPConn.SetKeepAlive
 	conn, err := net.Dial("tcp", addr)
@@ -61,7 +61,7 @@ func NewTCPClient(addr string, name string) (TCPClient, error) {
 
 	return TCPClient{
 		conn: conn,
-		game: NewGame(name),
+		game: NewGame(name, ia),
 	}, nil
 }
 

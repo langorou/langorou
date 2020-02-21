@@ -40,7 +40,7 @@ func main() {
 	addr := net.JoinHostPort(args[0], args[1])
 	fmt.Printf("connecting to %s\n", addr)
 
-	c, err := client.NewTCPClient(addr, Name)
+	c, err := client.NewTCPClient(addr, Name, client.NewDumbIA())
 	failIf(err, "")
 
 	failIf(c.Init(), "")
