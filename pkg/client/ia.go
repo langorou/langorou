@@ -17,10 +17,10 @@ func (dia *DumbIA) Play(state state) []Move {
 
 				endY := y + 1
 				endX := x +1
-				if y == len(state) {
+				if y >= len(state) - 1 {
 					endY -= 2
 				}
-				if x == len(row) {
+				if x >= len(row) - 1 {
 					endX -= 2
 				}
 
