@@ -37,8 +37,12 @@ func negamax_alpha (state state, strategy string, alpha float32, player uint8, m
 	
 }
 
+
+
+
 func turn_list (state state, strategy string, player uint8) [][]Move {
 	//renvoie une liste de de liste de move 
+	for cell in 	
 	var nb_move int = 10
 	var turn_list [][]Move = make([][]Move, 0)
 	for i:=0; i<nb_move; i++ {
@@ -47,7 +51,6 @@ func turn_list (state state, strategy string, player uint8) [][]Move {
 			turn_list[i][j] = Move{ Start: Coordinates{X:i,Y:j}, N:1, End:Coordinates{X:i,Y:j+1}}
 		}
 	}
-	return turn_list
 }
 
 func play_turn(state state, player uint8, move_list []Move) []PotentialState {
