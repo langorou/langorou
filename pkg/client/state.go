@@ -18,6 +18,10 @@ type cell struct {
 	race  race
 }
 
+func (c *cell) isEmpty() bool {
+	return c.count == 0
+}
+
 type state [][]cell
 
 func (s state) deepCopy() state {
