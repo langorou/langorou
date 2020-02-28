@@ -6,7 +6,7 @@ type PotentialState struct {
 }
 
 // applyMov to a state
-func evaluateMoveOutcome(s state, mov Move) []PotentialState {
+func evaluateMoveOutcomes(s state, race race, coup Coup) []PotentialState {
 	// we assume the mov is "safe"/correct
 
 	startRace := s[mov.Start.X][mov.Start.Y].race
