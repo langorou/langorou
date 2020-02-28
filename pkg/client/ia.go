@@ -1,5 +1,5 @@
 package client
 
 type IA interface {
-	Play(state state) []Move
+	Play(state state) Coup
 }
