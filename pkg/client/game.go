@@ -56,7 +56,6 @@ func (g *Game) Upd(changes []Changes) {
 			cell.count = change.Enemy
 			cell.race = Enemy
 		} else if change.Neutral == 0 && change.Ally == 0 && change.Enemy == 0 {
-			log.Printf("DELETING: %+v", change.Coords)
 			delete(g.state.grid, change.Coords)
 			continue
 		} else {
