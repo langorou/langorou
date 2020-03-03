@@ -25,39 +25,40 @@ func (g *Game) Mov() []Move {
 
 // Set initialize an empty grid in the state
 func (g *Game) Set(n uint8, m uint8) {
-	g.state = make([][]cell, n)
-	for i := range g.state {
-		g.state[i] = make([]cell, m)
+	g.state = state{
+		grid:   map[Coordinates]cell{},
+		height: n,
+		width:  m,
 	}
 }
 
 func (g *Game) Hum(coords []Coordinates) {
 	for _, pos := range coords {
-		g.state[pos.Y][pos.X].race = Neutral
-		//TODO check map and human order
-		g.state[pos.Y][pos.X].count = 0
+		cell := g.state.grid[pos]
+		cell.race = Neutral
+		cell.count = 0
+		g.state.grid[pos] = cell
 	}
 }
 
 //Upd updates the state of the game
 func (g *Game) Upd(changes []Changes) {
 
-	for _, cha := range changes {
-		if cha.Neutral > 0 && cha.Ally == 0 && cha.Enemy == 0 {
-			g.state[cha.Coords.Y][cha.Coords.X].count = cha.Neutral
-			g.state[cha.Coords.Y][cha.Coords.X].race = Neutral
-		} else if cha.Neutral == 0 && cha.Ally > 0 && cha.Enemy == 0 {
-			g.state[cha.Coords.Y][cha.Coords.X].count = cha.Ally
-			g.state[cha.Coords.Y][cha.Coords.X].race = Ally
-		} else if cha.Neutral == 0 && cha.Ally == 0 && cha.Enemy > 0 {
-			g.state[cha.Coords.Y][cha.Coords.X].count = cha.Enemy
-			g.state[cha.Coords.Y][cha.Coords.X].race = Enemy
-		} else if cha.Neutral == 0 && cha.Ally == 0 && cha.Enemy == 0 {
-			g.state[cha.Coords.Y][cha.Coords.X].count = 0.
-			g.state[cha.Coords.Y][cha.Coords.X].race = Empty
+	for _, change := range changes {
+		cell := g.state.grid[change.Coords]
+		if change.Neutral > 0 && change.Ally == 0 && change.Enemy == 0 {
+			cell.count = change.Neutral
+			cell.race = Neutral
+		} else if change.Neutral == 0 && change.Ally > 0 && change.Enemy == 0 {
+			cell.count = change.Ally
+			cell.race = Ally
+		} else if change.Neutral == 0 && change.Ally == 0 && change.Enemy > 0 {
+			cell.count = change.Enemy
+			cell.race = Enemy
 		} else {
-			log.Printf("impossible change, maximum one race per cell: %+v", cha)
+			log.Printf("impossible change, maximum one race per cell: %+v", change)
 		}
+		g.state.grid[change.Coords] = cell
 	}
 }
 

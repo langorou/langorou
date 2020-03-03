@@ -30,12 +30,10 @@ func init() {
 	flag.IntVar(&monster, "monster", 8, "quantity of monster in the start case")
 }
 
-
 func main() {
 	flag.Parse()
 	log.Print("starting server...")
 	go server.StartServer(mapPath, useRand, rows, columns, humans, monster)
-
 
 	addr := "localhost:5555"
 	player1, err := client.NewTCPClient(addr, "langone", client.NewDumbIA())

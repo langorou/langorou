@@ -1,24 +1,19 @@
 package client
 
-type PotentialState struct {
-	s    state
-	prob float64
-}
-
-// generateMoves generates all possible *single* moves for a given state
-// While a player _can_ make multiple moves, for now this function only
+// generateCoups generates coups for a given state and a given race
+// While a player _can_ make multiple moves within a coup, for now this function only
 // returns individual moves.
-func generateMoves(s state) []Move {
-	moves := []Move{}
+func generateCoups(s state, race race) []Coup {
+	coups := []Coup{}
 
-	for x, line := range s {
-		for y, cell := range line {
-			if cell.race == Ally {
-				moves = append(moves, generateMovesFromCell(s, Coordinates{uint8(x), uint8(y)})...)
-			}
+	for coord := range s.grid {
+		moves := generateMovesFromCell(s, coord)
+		for _, move := range moves {
+			coups = append(coups, Coup{move})
 		}
 	}
-	return moves
+	// TODO: generate more coups
+	return coups
 }
 
 // transformation represents a coordinate transformation
@@ -28,24 +23,22 @@ type transformation struct {
 	Y int8
 }
 
-func transform(s state, c Coordinates, t transformation) (res *Coordinates, ok bool) {
-	xLen := int8(len(s))
-	if xLen == 0 {
-		return nil, false
-	}
-	yLen := int8(len(s[0]))
-
-	xRes := int8(c.X) + t.X
-	if (xRes < 0) || (xRes >= xLen) {
-		return nil, false
+func transform(s state, c Coordinates, t transformation) (res Coordinates, ok bool) {
+	if s.width == 0 {
+		return c, false
 	}
 
-	yRes := int8(c.Y) + t.Y
-	if (yRes < 0) || (yRes >= yLen) {
-		return nil, false
+	xRes := uint8(int8(c.X) + t.X)
+	if (xRes < 0) || (xRes >= s.width) {
+		return c, false
 	}
 
-	return &Coordinates{uint8(xRes), uint8(yRes)}, true
+	yRes := uint8(int8(c.Y) + t.Y)
+	if (yRes < 0) || (yRes >= s.height) {
+		return c, false
+	}
+
+	return Coordinates{xRes, yRes}, true
 }
 
 func generateMovesFromCell(s state, source Coordinates) []Move {
@@ -55,7 +48,7 @@ func generateMovesFromCell(s state, source Coordinates) []Move {
 	// some units in the source cell allows us to do another attack (on another
 	// cell) in the same turn.
 
-	moves := []Move{}
+	moves := make([]Move, 0, 8)
 
 	transforms := []transformation{
 		{0, -1},  // left
@@ -74,38 +67,27 @@ func generateMovesFromCell(s state, source Coordinates) []Move {
 			// move is out of bounds
 			continue
 		}
-		moves = append(moves, Move{Start: source, N: s[source.X][source.Y].count, End: *target})
+		moves = append(moves, Move{Start: source, N: s.grid[source].count, End: target})
 	}
 	return moves
 }
 
-// applyMov to a state
-func evaluateMoveOutcomes(s state, race race, coup Coup) []PotentialState {
-	// we assume the mov is "safe"/correct
-
-	// TODO: implement
-	return []PotentialState{{s, 1}}
-}
-
+// scoreState is the heuristic for our IA
 func scoreState(potSta PotentialState) float64 {
 
 	// Apply the change on the state
 
 	h := 0.
-	for _, row := range potSta.s {
-		for _, c := range row {
-			switch c.race {
-			case Empty:
-				// nothing
-			case Neutral:
-				// nothing
-			case Ally:
-				h += float64(c.count)
-			case Enemy:
-				h -= float64(c.count)
-			}
+	for _, cell := range potSta.s.grid {
+		switch cell.race {
+		case Neutral:
+			// nothing
+		case Ally:
+			h += float64(cell.count)
+		case Enemy:
+			h -= float64(cell.count)
 		}
 	}
 
-	return h * potSta.prob
+	return h * potSta.probability
 }

@@ -5,10 +5,8 @@ import "fmt"
 type race uint
 
 const (
-	// Empty race
-	Empty race = iota
 	// Neutral race
-	Neutral
+	Neutral = iota
 	// Ally race
 	Ally
 	// Enemy race
@@ -21,7 +19,7 @@ func (r race) opponent() race {
 	} else if r == Enemy {
 		return Ally
 	} else {
-		panic(fmt.Sprintf("opponent asked for race: %d (Empty or Neutral) this should not happen ", r))
+		panic(fmt.Sprintf("opponent asked for race: %d (probably Neutral) this should not happen ", r))
 	}
 }
 
@@ -34,13 +32,16 @@ func (c *cell) isEmpty() bool {
 	return c.count == 0
 }
 
-type state [][]cell
+type state struct {
+	grid   map[Coordinates]cell
+	height uint8
+	width  uint8
+}
 
 func (s state) deepCopy() state {
-	newState := make([][]cell, len(s))
-	for i := range s {
-		newState[i] = make([]cell, len(s[i]))
-		copy(newState[i], s[i])
+	newGrid := make(map[Coordinates]cell, len(s.grid))
+	for k, v := range s.grid {
+		newGrid[k] = v
 	}
-	return newState
+	return state{grid: newGrid, height: s.height, width: s.width}
 }
