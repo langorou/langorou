@@ -57,6 +57,7 @@ func (g *Game) Upd(changes []Changes) {
 			cell.race = Enemy
 		} else {
 			log.Printf("impossible change, maximum one race per cell: %+v", change)
+			delete(g.state.grid, change.Coords)
 		}
 		g.state.grid[change.Coords] = cell
 	}

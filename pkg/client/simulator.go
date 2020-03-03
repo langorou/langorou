@@ -1,33 +1,129 @@
 package client
 
+import "fmt"
+
 type PotentialState struct {
 	s           state
 	probability float64
 }
 
-// evaluateMoveOutComes computes the possible next states from a given state and a list of moves (a coup)
-func evaluateMoveOutcomes(s state, race race, coup Coup) []PotentialState {
-	// we assume the mov is "safe"/correct
+// applyCoup computes the possibles states after applying a Coup (a list of moves)
+func applyCoup(s state, race race, coup Coup) []PotentialState {
+	// TODO improve this function, it's not really efficient, some moves are
 
-	// TODO: implement
-	return []PotentialState{{s, 1}}
+	// Start with the current state with probability 1
+	states := []PotentialState{{s: s.deepCopy(), probability: 1}}
+
+	for _, move := range coup {
+		states = applyMoveOnPossibleStates(states, race, move)
+	}
+
+	return states
+}
+
+// applyMoveOnPossibleStates is used by applyCoup to iteratively compute the list of possible states
+// that can be reached from a state and a list of moves (a coup)
+func applyMoveOnPossibleStates(states []PotentialState, race race, move Move) []PotentialState {
+	// We will have at lest len(states)
+	result := make([]PotentialState, 0, len(states))
+
+	for _, state := range states {
+		outcomes := applyMove(state.s, race, move)
+
+		for _, outcome := range outcomes {
+			// Take into account the probability of the previous states
+			outcome.probability *= state.probability
+			result = append(result, outcome)
+		}
+	}
+
+	return result
+}
+
+// applyMove computes the possible next states from a given state and ONLY ONE move
+func applyMove(s state, race race, move Move) []PotentialState {
+
+	startCell := s.grid[move.Start]
+	endCell, ok := s.grid[move.End]
+
+	// Ensure we are moving our race (the move is "legal")
+	if startCell.race != race {
+		panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, startCell.race))
+	}
+
+
+	// In all cases we move our units
+	startCell.count -= move.N
+
+	if !ok || endCell.isEmpty() || startCell.race == endCell.race {
+		// nobody on there, or same race as ours, no battle and we can just increase the count
+		newState := s.deepCopy()
+
+		// Update the cells
+		endCell.count += move.N
+		endCell.race = race
+
+		newState.grid[move.Start] = startCell
+		newState.grid[move.End] = endCell
+
+		return []PotentialState{{s: newState, probability: 1}}
+	}
+
+	// Fight with the enemy or neutral
+	// We use a float here for later computation
+	var isNeutral uint8 = 0
+	if endCell.race == Neutral {
+		isNeutral = 1
+	}
+
+	P := getProbability(move.N, endCell.count, isNeutral == 1)
+
+	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
+	if P == 1 {
+		// We surely win, same as "nobody there"
+		newState := s.deepCopy()
+
+		endCell.count = move.N + (isNeutral * endCell.count) // if we totally win against Neutral, we convert all of them
+		endCell.race = race
+
+		newState.grid[move.Start] = startCell
+		newState.grid[move.End] = endCell
+
+		return []PotentialState{{s: newState, probability: 1}}
+	}
+
+	winState := s.deepCopy()
+
+	winState.grid[move.Start] = startCell
+	winState.grid[move.End] = cell{
+		// each ally has probability P to survive. Against neutral, we have a probability P to convert them
+		count: uint8(P * float64(move.N) + float64(isNeutral*endCell.count)*P),
+		race:  race,
+	}
+
+	lossState := s.deepCopy()
+
+	lossState.grid[move.Start] = startCell
+	lossState.grid[move.End] = cell{
+		// each enemy has probability 1-P to survive
+		count: uint8((1 - P) * float64(endCell.count)),
+		race: endCell.race,
+	}
+
+	return []PotentialState{
+		{s: winState, probability: P},
+		{s: lossState, probability: 1 - P},
+	}
 }
 
 // Adapted from github.com/Succo/twilight, but we should use float since we evaluate probability of winning.
 
-// getProba of winning for the attaquant 1 with an effectif E1, agains E2
+// getProbability of winning for the attaquant 1 with an effectif E1, agains E2
 // E2 might be Neutral
-func getProba(E1, E2 uint8, E2isNeutral bool) float64 {
-
-	var cste float64
-	if E2isNeutral {
-		cste = 1
-	} else {
-		cste = 1.5
-	}
+func getProbability(E1, E2 uint8, E2isNeutral bool) float64 {
 
 	// True by property
-	if float64(E1) >= cste*float64(E2) {
+	if (E2isNeutral  && E1 >= E2) || (!E2isNeutral && float64(E1) >= 1.5 * float64(E2)) {
 		return 1
 	}
 

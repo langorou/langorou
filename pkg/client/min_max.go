@@ -11,7 +11,7 @@ func negamaxAlpha(state state, alpha float64, race race, depth uint8) (Coup, flo
 	}
 
 	for _, coup := range generateCoups(state, race) {
-		potentialStates := evaluateMoveOutcomes(state, race, coup)
+		potentialStates := applyCoup(state, race, coup)
 
 		score := 0.0
 		for _, potentialState := range potentialStates {
@@ -23,10 +23,8 @@ func negamaxAlpha(state state, alpha float64, race race, depth uint8) (Coup, flo
 			maxScore = score
 			bestTurn = coup
 		}
-		//todo save previously modified cells by the applyMoves function
-		//we use a deep copy for now
-		//undoMoves(potentialState.s, race, coup) dans le cas
-		//ou pas de bataille aleatoire pour eviter les copies
+
+		// TODO: if memory is an issue, we could try to implement an undoCoup function, that would allow to reduce the number of copies made
 
 		if maxScore > -alpha {
 			break
@@ -34,8 +32,4 @@ func negamaxAlpha(state state, alpha float64, race race, depth uint8) (Coup, flo
 
 	}
 	return bestTurn, maxScore
-}
-
-func undoCoup(state state, player uint8, coup Coup) {
-	//TODO
 }
