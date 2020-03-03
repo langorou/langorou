@@ -6,17 +6,17 @@ func negamaxAlpha(state state, alpha float64, race race, depth uint8) (Coup, flo
 	maxScore := -1000000.0
 
 	if depth <= 0 {
-		potentialState := PotentialState{s: state, prob: 1}
+		potentialState := PotentialState{s: state, probability: 1}
 		return bestTurn, scoreState(potentialState)
 	}
 
-	for _, coup := range getCoups(state, race) {
+	for _, coup := range generateCoups(state, race) {
 		potentialStates := evaluateMoveOutcomes(state, race, coup)
 
 		score := 0.0
 		for _, potentialState := range potentialStates {
 			_, tmpScore := negamaxAlpha(potentialState.s, maxScore, race.opponent(), depth-1)
-			score += tmpScore * potentialState.prob
+			score += tmpScore * potentialState.probability
 		}
 		score = -score
 		if score > maxScore {
@@ -34,18 +34,6 @@ func negamaxAlpha(state state, alpha float64, race race, depth uint8) (Coup, flo
 
 	}
 	return bestTurn, maxScore
-}
-
-func getMovesFromCell(coord Coordinates) []Move {
-	//TODO returns possible moves from a cell
-	//we don't consider the splits for now
-	return nil
-}
-
-// getMoves returns a list of moves
-func getCoups(state state, race race) []Coup {
-	// TODO
-	return nil
 }
 
 func undoCoup(state state, player uint8, coup Coup) {

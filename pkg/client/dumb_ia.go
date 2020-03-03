@@ -12,27 +12,27 @@ func (dia *DumbIA) Play(state state) Coup {
 	// Simulate computation
 	time.Sleep(time.Second)
 
-	for y, row := range state {
-		for x, cell := range row {
-			if cell.race == Ally && cell.count > 0 {
+	for coord, cell := range state.grid {
+		x := coord.X
+		y := coord.Y
+		if cell.race == Ally && cell.count > 0 {
 
-				endY := y + 1
-				endX := x + 1
-				if endY == len(state) {
-					endY -= 2
-				}
-				if endX == len(row) {
-					endX -= 2
-				}
+			endY := y + 1
+			endX := x + 1
+			if endY == state.height {
+				endY -= 2
+			}
+			if endX == state.width {
+				endX -= 2
+			}
 
-				return []Move{
-					{
-						Start: Coordinates{X: uint8(x), Y: uint8(y)},
-						// Everyone moves !
-						N:   uint8(cell.count),
-						End: Coordinates{X: uint8(endX), Y: uint8(endY)},
-					},
-				}
+			return []Move{
+				{
+					Start: Coordinates{X: uint8(x), Y: uint8(y)},
+					// Everyone moves !
+					N:   uint8(cell.count),
+					End: Coordinates{X: uint8(endX), Y: uint8(endY)},
+				},
 			}
 		}
 	}

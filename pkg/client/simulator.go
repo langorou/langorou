@@ -1,5 +1,18 @@
 package client
 
+type PotentialState struct {
+	s           state
+	probability float64
+}
+
+// evaluateMoveOutComes computes the possible next states from a given state and a list of moves (a coup)
+func evaluateMoveOutcomes(s state, race race, coup Coup) []PotentialState {
+	// we assume the mov is "safe"/correct
+
+	// TODO: implement
+	return []PotentialState{{s, 1}}
+}
+
 // Adapted from github.com/Succo/twilight, but we should use float since we evaluate probability of winning.
 
 // getProba of winning for the attaquant 1 with an effectif E1, agains E2
