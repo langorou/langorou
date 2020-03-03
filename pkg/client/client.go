@@ -21,8 +21,20 @@ type Move struct {
 	End   Coordinates
 }
 
-// Coup represents a list of moves/actions
+// Coup represents a list of moves/actions, it implements the sort.Interface to sort by target cells
 type Coup []Move
+
+func (coup Coup) Len() int {
+	return len(coup)
+}
+
+func (coup Coup) Less(i, j int) bool {
+	return coup[i].End.Y > coup[j].End.Y && coup[i].End.X > coup[j].End.X
+}
+
+func (coup Coup) Swap(i, j int) {
+	coup[i], coup[j] = coup[j], coup[i]
+}
 
 // Player represents the player -> server protocol
 type Player interface {
