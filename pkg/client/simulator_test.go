@@ -5,17 +5,18 @@ import (
 	"testing"
 )
 
-const alphaTest = 10
+const testAlpha = 10
+const testDepth = 5
 
 func TestNegamax(t *testing.T) {
 
 	t.Run("case1", func(t *testing.T) {
-		// N neutral, A ally, E ennemy
+		// N neutral, A ally, E enemy
 		// 10N | XXX | 06N
 		// XXX | 08A | XXX
 		// 12E | XXX | XXX
 
-		// Here our only chance to win is to try to steal the group of 10 neutrals then go for the group of 6 neutrals
+		// Here our only chance to win is to force fight before the enemy gets a better army
 		startState := state{
 			grid: map[Coordinates]cell{
 				{X: 0, Y: 0}: {
@@ -35,15 +36,54 @@ func TestNegamax(t *testing.T) {
 					count: 8,
 				},
 			},
-			height: 2,
-			width:  2,
+			height: 3,
+			width:  3,
 		}
 
-		coup, _ := negamaxAlpha(startState, alphaTest, Ally, 5)
+		coup, _ := negamaxAlpha(startState, testAlpha, Ally, testDepth)
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 1, Y: 1},
 			N:     8,
-			End:   Coordinates{X: 0, Y: 0},
+			End:   Coordinates{X: 0, Y: 2},
+		}}, coup)
+	})
+
+	t.Run("case2", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// 08A | 06N | XXX
+		// XXX | 10N | XXX
+		// XXX | XXX | XXX
+		// Far away: 8Enemy
+
+		// Here our only chance to win is to try to steal the group of 10 neutrals then go for the group of 6 neutrals
+		startState := state{
+			grid: map[Coordinates]cell{
+				{X: 0, Y: 0}: {
+					race:  Ally,
+					count: 8,
+				},
+				{X: 1, Y: 0}: {
+					race:  Neutral,
+					count: 6,
+				},
+				{X: 1, Y: 1}: {
+					race:  Neutral,
+					count: 10,
+				},
+				{X: 8, Y: 8}: {
+					race:  Enemy,
+					count: 8,
+				},
+			},
+			height: 10,
+			width:  10,
+		}
+
+		coup, _ := negamaxAlpha(startState, testAlpha, Ally, testDepth)
+		assert.Equal(t, Coup{Move{
+			Start: Coordinates{X: 0, Y: 0},
+			N:     8,
+			End:   Coordinates{X: 1, Y: 0},
 		}}, coup)
 	})
 }
@@ -146,7 +186,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			race:  Enemy,
 			count: 15,
 		}
-		coup, _ := negamaxAlpha(s, alphaTest, Ally, 3)
+		coup, _ := negamaxAlpha(s, testAlpha, Ally, testDepth)
 
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 1, Y: 1},

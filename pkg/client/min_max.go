@@ -11,9 +11,6 @@ func negamaxAlpha(state state, alpha float64, race race, depth uint8) (Coup, flo
 	if depth <= 0 || len(coups) == 0 {
 		potentialState := potentialState{s: state, probability: 1}
 		score := scoreState(potentialState, race)
-		if race == Ally {
-			score = -score
-		}
 		return bestCoup, score
 	}
 

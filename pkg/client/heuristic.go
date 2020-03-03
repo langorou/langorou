@@ -52,6 +52,7 @@ func generateMovesFromCell(s state, source Coordinates) []Move {
 
 	moves := make([]Move, 0, 8)
 
+	// TODO: can be optimized
 	transforms := []transformation{
 		{0, -1},  // left
 		{0, 1},   // right
@@ -66,7 +67,6 @@ func generateMovesFromCell(s state, source Coordinates) []Move {
 	for _, t := range transforms {
 		target, ok := transform(s, source, t)
 		if !ok {
-			// move is out of bounds
 			continue
 		}
 		moves = append(moves, Move{Start: source, N: s.grid[source].count, End: target})
