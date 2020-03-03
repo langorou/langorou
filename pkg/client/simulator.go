@@ -1,6 +1,9 @@
 package client
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
 type PotentialState struct {
 	s           state
@@ -14,7 +17,8 @@ func applyCoup(s state, race race, coup Coup) []PotentialState {
 	// Start with the current state with probability 1
 	states := []PotentialState{{s: s.deepCopy(), probability: 1}}
 
-	// TODO sort moves by different arrival cells
+	// Sort moves by target cell
+	sort.Sort(coup)
 
 	lastEndCoordinates := coup[0].End
 	var count uint8
