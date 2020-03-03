@@ -5,6 +5,49 @@ import (
 	"testing"
 )
 
+const alphaTest = 10
+
+func TestNegamax(t *testing.T) {
+
+	t.Run("case1", func(t *testing.T) {
+		// N neutral, A ally, E ennemy
+		// 10N | XXX | 06N
+		// XXX | 08A | XXX
+		// 12E | XXX | XXX
+
+		// Here our only chance to win is to try to steal the group of 10 neutrals then go for the group of 6 neutrals
+		startState := state{
+			grid: map[Coordinates]cell{
+				{X: 0, Y: 0}: {
+					race:  Neutral,
+					count: 10,
+				},
+				{X: 2, Y: 0}: {
+					race:  Neutral,
+					count: 6,
+				},
+				{X: 0, Y: 2}: {
+					race:  Enemy,
+					count: 12,
+				},
+				{X: 1, Y: 1}: {
+					race:  Ally,
+					count: 8,
+				},
+			},
+			height: 2,
+			width:  2,
+		}
+
+		coup, _ := negamaxAlpha(startState, alphaTest, Ally, 5)
+		assert.Equal(t, Coup{Move{
+			Start: Coordinates{X: 1, Y: 1},
+			N:     8,
+			End:   Coordinates{X: 0, Y: 0},
+		}}, coup)
+	})
+}
+
 func TestSimulationAllyNeutral(t *testing.T) {
 	startState := state{
 		grid: map[Coordinates]cell{
@@ -103,7 +146,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			race:  Enemy,
 			count: 15,
 		}
-		coup, _ := negamaxAlpha(s, 10, Ally, 3)
+		coup, _ := negamaxAlpha(s, alphaTest, Ally, 3)
 
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 1, Y: 1},
