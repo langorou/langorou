@@ -34,7 +34,7 @@ func negamaxAlpha(state state, alpha float64, race race, depth uint8) (Coup, flo
 
 		// TODO: uncomment me
 		// if maxScore > - alpha {
-		// 	break
+		//	break
 		// }
 
 	}

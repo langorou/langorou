@@ -106,7 +106,7 @@ func applyMove(s state, race race, target Coordinates, count uint8) []potentialS
 		isNeutral = 1
 	}
 
-	P := getProbability(count, endCell.count, isNeutral == 1)
+	P := winProbability(count, endCell.count, isNeutral == 1)
 
 	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
 	if P == 1 {
@@ -145,9 +145,9 @@ func applyMove(s state, race race, target Coordinates, count uint8) []potentialS
 
 // Adapted from github.com/Succo/twilight, but we should use float since we evaluate probability of winning.
 
-// getProbability of winning for the attaquant 1 with an effectif E1, agains E2
+// winProbability of winning for the attaquant 1 with an effectif E1, agains E2
 // E2 might be Neutral
-func getProbability(E1, E2 uint8, E2isNeutral bool) float64 {
+func winProbability(E1, E2 uint8, E2isNeutral bool) float64 {
 
 	// True by property
 	if (E2isNeutral && E1 >= E2) || (!E2isNeutral && float64(E1) >= 1.5*float64(E2)) {

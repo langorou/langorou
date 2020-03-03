@@ -1,5 +1,9 @@
 package client
 
+import (
+	"math"
+)
+
 // generateCoups generates coups for a given state and a given race
 // While a player _can_ make multiple moves within a coup, for now this function only
 // returns individual moves.
@@ -74,19 +78,95 @@ func generateMovesFromCell(s state, source Coordinates) []Move {
 	return moves
 }
 
+// scoreNeutralBattle scores the issue of a battle between a monster and a neutral group
+func scoreNeutralBattle(c1, c2 Coordinates, cell1, cell2 cell) float64 {
+	proba := winProbability(cell1.count, cell2.count, true)
+	distance := c1.Distance(c2)
+
+	// probable gain of population
+	probableGain := math.Max(
+		0,
+		proba*float64(cell1.count+cell2.count)-float64(cell1.count),
+	)
+
+	return probableGain / distance
+}
+
+// scoreMonsterBattle scores the issue of a battle between monsters
+func scoreMonsterBattle(c1, c2 Coordinates, cell1, cell2 cell) (float64, float64) {
+	distance := c1.Distance(c2)
+
+	// p1 is for 1 attacks 2
+	p1 := winProbability(cell1.count, cell2.count, false)
+	// p2 is for 2 attacks 1
+	p2 := winProbability(cell2.count, cell1.count, false)
+
+	s1 := p1*float64(cell1.count+cell2.count) - float64(cell2.count)
+	s2 := p2*float64(cell2.count+cell1.count) - float64(cell1.count)
+
+	return s1 / distance, s2 / distance
+}
+
 // scoreState is the heuristic for our IA
-func scoreState(potSta potentialState, race race) float64 {
+func scoreState(potSta potentialState, ourRace race) float64 {
 
-	// Apply the change on the state
+	// different counts participating in the heuristic
+	counts := map[race]float64{Ally: 0, Enemy: 0}
+	battleCounts := map[race]float64{Ally: 0, Enemy: 0}
+	neutralBattleCounts := map[race]float64{Ally: 0, Enemy: 0}
 
-	h := 0.
-	for _, cell := range potSta.s.grid {
-		if cell.race == race {
-			h += float64(cell.count)
-		} else if cell.race == race.opponent() {
-			h -= float64(cell.count)
+	for c1, cell1 := range potSta.s.grid {
+		if cell1.race == Neutral {
+			continue
+		}
+		counts[cell1.race] += float64(cell1.count)
+
+		// Loop to compute stats on the possible battle
+		for c2, cell2 := range potSta.s.grid {
+			if c1 == c2 || cell1.race == cell2.race {
+				continue
+			}
+
+			if cell2.race == Neutral {
+				// TODO: average here since we can count a battle multiple times
+				neutralBattleCounts[cell1.race] += scoreNeutralBattle(c1, c2, cell1, cell2)
+			} else if cell2.race == cell1.race.opponent() {
+				// TODO: average here since we can count a battle multiple times
+				g1, g2 := scoreMonsterBattle(c1, c2, cell1, cell2)
+				battleCounts[cell1.race] += g1
+				battleCounts[cell2.race] += g2
+			}
 		}
 	}
 
-	return h * potSta.probability
+	total := 0.
+
+	// TODO: make those parameters of a heuristic struct and try to tweak them
+	// TODO: distance power alpha instead of distance power 1
+	const (
+		countCoeff         = 2
+		battleCoeff        = 0.2
+		neutralBattleCoeff = 0.5
+	)
+
+	for _, heuristic := range []struct {
+		coeff  float64
+		scores map[race]float64
+	}{
+		{countCoeff, counts},
+		{battleCoeff, battleCounts},
+		{neutralBattleCoeff, neutralBattleCounts},
+	} {
+		score := 0.
+		for race, count := range heuristic.scores {
+			if race == ourRace {
+				score += count
+			} else if race.opponent() == ourRace {
+				score -= count
+			}
+		}
+		total += score * heuristic.coeff
+	}
+
+	return total * potSta.probability
 }
