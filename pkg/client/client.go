@@ -21,6 +21,9 @@ type Move struct {
 	End   Coordinates
 }
 
+// Coup represents a list of moves/actions
+type Coup []Move
+
 // Player represents the player -> server protocol
 type Player interface {
 	// Player -> Server

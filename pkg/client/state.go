@@ -1,5 +1,7 @@
 package client
 
+import "fmt"
+
 type race uint
 
 const (
@@ -13,8 +15,18 @@ const (
 	Enemy
 )
 
+func (r race) opponent() race {
+	if r == Ally {
+		return Enemy
+	} else if r == Enemy {
+		return Ally
+	} else {
+		panic(fmt.Sprintf("opponent asked for race: %d (Empty or Neutral) this should not happen ", r))
+	}
+}
+
 type cell struct {
-	count float64 // float used for potential state, used in heuristic computation
+	count uint8 // float used for potential state, used in heuristic computation
 	race  race
 }
 
