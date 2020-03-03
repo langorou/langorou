@@ -31,7 +31,7 @@ func (dia *DumbIA) Play(state state) Coup {
 					Start: coord,
 					// Everyone moves !
 					N:   cell.count,
-					End: Coordinates{X: uint8(endX), Y: uint8(endY)},
+					End: Coordinates{X: endX, Y: endY},
 				},
 			}
 		}

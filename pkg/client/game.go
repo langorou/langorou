@@ -55,6 +55,9 @@ func (g *Game) Upd(changes []Changes) {
 		} else if change.Neutral == 0 && change.Ally == 0 && change.Enemy > 0 {
 			cell.count = change.Enemy
 			cell.race = Enemy
+		} else if change.Neutral == 0 && change.Ally == 0 && change.Enemy == 0 {
+			delete(g.state.grid, change.Coords)
+			continue
 		} else {
 			log.Printf("impossible change, maximum one race per cell: %+v", change)
 		}
