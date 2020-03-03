@@ -5,17 +5,17 @@ import (
 	"sort"
 )
 
-type PotentialState struct {
+type potentialState struct {
 	s           state
 	probability float64
 }
 
 // applyCoup computes the possibles states after applying a Coup (a list of moves)
-func applyCoup(s state, race race, coup Coup) []PotentialState {
+func applyCoup(s state, race race, coup Coup) []potentialState {
 	// TODO improve this function, it's not really efficient, some moves are
 
 	// Start with the current state with probability 1
-	states := []PotentialState{{s: s.deepCopy(), probability: 1}}
+	states := []potentialState{{s: s.deepCopy(), probability: 1}}
 
 	// Sort moves by target cell
 	sort.Sort(coup)
@@ -64,9 +64,9 @@ func applyCoup(s state, race race, coup Coup) []PotentialState {
 
 // applyMoveOnPossibleStates is used by applyCoup to iteratively compute the list of possible states
 // that can be reached from a state and a list of moves (a coup)
-func applyMoveOnPossibleStates(states []PotentialState, race race, target Coordinates, count uint8) []PotentialState {
+func applyMoveOnPossibleStates(states []potentialState, race race, target Coordinates, count uint8) []potentialState {
 	// We will have at lest len(states)
-	result := make([]PotentialState, 0, len(states))
+	result := make([]potentialState, 0, len(states))
 
 	for _, state := range states {
 		outcomes := applyMove(state.s, race, target, count)
@@ -82,7 +82,7 @@ func applyMoveOnPossibleStates(states []PotentialState, race race, target Coordi
 }
 
 // applyMove computes the possible next states from a given state and ONLY ONE move
-func applyMove(s state, race race, target Coordinates, count uint8) []PotentialState {
+func applyMove(s state, race race, target Coordinates, count uint8) []potentialState {
 
 	endCell, ok := s.grid[target]
 
@@ -96,7 +96,7 @@ func applyMove(s state, race race, target Coordinates, count uint8) []PotentialS
 
 		newState.grid[target] = endCell
 
-		return []PotentialState{{s: newState, probability: 1}}
+		return []potentialState{{s: newState, probability: 1}}
 	}
 
 	// Fight with the enemy or neutral
@@ -118,7 +118,7 @@ func applyMove(s state, race race, target Coordinates, count uint8) []PotentialS
 
 		newState.grid[target] = endCell
 
-		return []PotentialState{{s: newState, probability: 1}}
+		return []potentialState{{s: newState, probability: 1}}
 	}
 
 	winState := s.deepCopy()
@@ -137,7 +137,7 @@ func applyMove(s state, race race, target Coordinates, count uint8) []PotentialS
 		race:  endCell.race,
 	}
 
-	return []PotentialState{
+	return []potentialState{
 		{s: winState, probability: P},
 		{s: lossState, probability: 1 - P},
 	}

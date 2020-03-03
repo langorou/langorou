@@ -2,15 +2,15 @@ package client
 
 import "fmt"
 
-type race uint
+type race string
 
 const (
 	// Neutral race
-	Neutral = iota
+	Neutral = "Neutral"
 	// Ally race
-	Ally
+	Ally = "Ally"
 	// Enemy race
-	Enemy
+	Enemy = "Enemy"
 )
 
 func (r race) opponent() race {
@@ -19,7 +19,7 @@ func (r race) opponent() race {
 	} else if r == Enemy {
 		return Ally
 	} else {
-		panic(fmt.Sprintf("opponent asked for race: %d (probably Neutral) this should not happen ", r))
+		panic(fmt.Sprintf("opponent asked for race: %s this should not happen ", r))
 	}
 }
 

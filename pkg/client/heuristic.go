@@ -75,7 +75,7 @@ func generateMovesFromCell(s state, source Coordinates) []Move {
 }
 
 // scoreState is the heuristic for our IA
-func scoreState(potSta PotentialState, race race) float64 {
+func scoreState(potSta potentialState, race race) float64 {
 
 	// Apply the change on the state
 

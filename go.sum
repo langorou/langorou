@@ -1,5 +1,7 @@
 github.com/Succo/twilight v0.0.0-20180129152954-8bf8dbe35876 h1:8TjS11XEfby0BNZfwKNFP7E0MLxdsCqhpLg8nUvJmNw=
 github.com/Succo/twilight v0.0.0-20180129152954-8bf8dbe35876/go.mod h1:8ycNa4Qz4nI6Y2gPrWwhXqZ7omUf+sEu8IkcBFxK/IU=
+github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
+github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/langorou/twilight v0.0.0-20200221102340-7363eef52e26 h1:TNn9wp5N0tnzKX93vFLUZGyQAkgKU2in+lVK6LIJa1M=
 github.com/langorou/twilight v0.0.0-20200221102340-7363eef52e26/go.mod h1:2Uj64yEAmO/Mu6BeZv+rF/IibuNO+jyshQd7VuS45ak=
 github.com/langorou/twilight v0.0.0-20200221102718-a42f48b9fac6 h1:LBzCn1fHM1A/0SkFe48HydFebSfE/AQlCwIZLJq10jE=
@@ -8,7 +10,16 @@ github.com/langorou/twilight v0.0.0-20200221104010-9892091c1c0f h1:P/p3elOqVittJ
 github.com/langorou/twilight v0.0.0-20200221104010-9892091c1c0f/go.mod h1:2Uj64yEAmO/Mu6BeZv+rF/IibuNO+jyshQd7VuS45ak=
 github.com/langorou/twilight v0.0.0-20200221104308-cc3e620acb25 h1:n/p3WTTH1J2svTiA7r4oQcjt8F/qKcRWZnbzRcJ55hA=
 github.com/langorou/twilight v0.0.0-20200221104308-cc3e620acb25/go.mod h1:2Uj64yEAmO/Mu6BeZv+rF/IibuNO+jyshQd7VuS45ak=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rakyll/statik v0.1.6 h1:uICcfUXpgqtw2VopbIncslhAmE5hwc4g20TEyEENBNs=
 github.com/rakyll/statik v0.1.6/go.mod h1:OEi9wJV/fMUAGx1eNjq75DKDsJVuEv1U0oYdX6GX8Zs=
+github.com/stretchr/objx v0.1.0 h1:4G4v2dO3VZwixGIRoQ5Lfboy6nUhCyYzaqnIAPPhYs4=
+github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/testify v1.5.1 h1:nOGnQDM7FYENwehXlg/kFVnos3rEvtKTjRvOWSzb6H4=
+github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
+gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 launchpad.net/xmlpath v0.0.0-20130614043138-000000000004 h1:B8nNZBUrx8YufDCAJjvO/lVs4GxXMQHyrjwJdJzXMFg=
 launchpad.net/xmlpath v0.0.0-20130614043138-000000000004/go.mod h1:vqyExLOM3qBx7mvYRkoxjSCF945s0mbe7YynlKYXtsA=

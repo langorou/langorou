@@ -16,6 +16,10 @@ build:
 auto:
 	${GOCMD} run cmd/auto/main.go -rand
 
+.PHONY: test
+test:
+	${GOCMD} test -v ./...
+
 .PHONY: fmt
 fmt:
 	${GOCMD} fmt $$(go list ./... | grep -v /vendor/)
