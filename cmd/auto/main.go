@@ -38,7 +38,7 @@ func main() {
 	addr := "localhost:5555"
 	player1, err := client.NewTCPClient(addr, "langone", client.NewDumbIA())
 	failIf(err, "")
-	player2, err := client.NewTCPClient(addr, "langtwo", client.NewDumbIA())
+	player2, err := client.NewTCPClient(addr, "langtwo", client.NewMinMaxIA(10, 5))
 	failIf(err, "")
 
 	go player1.Start()

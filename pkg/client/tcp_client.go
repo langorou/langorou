@@ -84,7 +84,7 @@ func (c *TCPClient) SendMove(moves []Move) error {
 	msg[3] = uint8(len(moves))
 
 	log.Printf("===")
-	log.Printf("Sending %d moves:", len(moves))
+	log.Printf("Player: %s sending %d moves:", c.game.playerName, len(moves))
 	for i, move := range moves {
 		log.Printf("Move: %+v", move)
 		msg[4+5*i] = move.Start.X
