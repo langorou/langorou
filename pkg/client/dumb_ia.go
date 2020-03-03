@@ -4,6 +4,8 @@ import "time"
 
 type DumbIA struct{}
 
+var _ IA = &DumbIA{}
+
 func NewDumbIA() *DumbIA {
 	return &DumbIA{}
 }

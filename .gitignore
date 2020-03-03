@@ -17,3 +17,5 @@
 # IDE related
 .vscode/
 .idea/
+
+bin/

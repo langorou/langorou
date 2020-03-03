@@ -7,7 +7,7 @@ func negamaxAlpha(state state, alpha float64, race race, depth uint8) (Coup, flo
 
 	if depth <= 0 {
 		potentialState := PotentialState{s: state, probability: 1}
-		return bestTurn, scoreState(potentialState)
+		return bestTurn, scoreState(potentialState, race)
 	}
 
 	for _, coup := range generateCoups(state, race) {
@@ -26,9 +26,10 @@ func negamaxAlpha(state state, alpha float64, race race, depth uint8) (Coup, flo
 
 		// TODO: if memory is an issue, we could try to implement an undoCoup function, that would allow to reduce the number of copies made
 
-		if maxScore > -alpha {
-			break
-		}
+		// TODO: uncomment me
+		// if maxScore > - alpha {
+		// 	break
+		// }
 
 	}
 	return bestTurn, maxScore

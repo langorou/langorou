@@ -6,10 +6,12 @@ package client
 func generateCoups(s state, race race) []Coup {
 	coups := []Coup{}
 
-	for coord := range s.grid {
-		moves := generateMovesFromCell(s, coord)
-		for _, move := range moves {
-			coups = append(coups, Coup{move})
+	for coord, cell := range s.grid {
+		if cell.race == race {
+			moves := generateMovesFromCell(s, coord)
+			for _, move := range moves {
+				coups = append(coups, Coup{move})
+			}
 		}
 	}
 	// TODO: generate more coups
@@ -73,18 +75,15 @@ func generateMovesFromCell(s state, source Coordinates) []Move {
 }
 
 // scoreState is the heuristic for our IA
-func scoreState(potSta PotentialState) float64 {
+func scoreState(potSta PotentialState, race race) float64 {
 
 	// Apply the change on the state
 
 	h := 0.
 	for _, cell := range potSta.s.grid {
-		switch cell.race {
-		case Neutral:
-			// nothing
-		case Ally:
+		if cell.race == race {
 			h += float64(cell.count)
-		case Enemy:
+		} else if cell.race == race.opponent() {
 			h -= float64(cell.count)
 		}
 	}
