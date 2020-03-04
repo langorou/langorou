@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const testDepth = 7
+const testDepth = 5
 
 func TestMinMax(t *testing.T) {
 
