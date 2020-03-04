@@ -108,21 +108,21 @@ func scoreMonsterBattle(c1, c2 Coordinates, cell1, cell2 cell) (float64, float64
 }
 
 // scoreState is the heuristic for our IA
-func scoreState(potSta potentialState, ourRace race) float64 {
+func scoreState(s state, ourRace race) float64 {
 
 	// different counts participating in the heuristic
 	counts := map[race]float64{Ally: 0, Enemy: 0}
 	battleCounts := map[race]float64{Ally: 0, Enemy: 0}
 	neutralBattleCounts := map[race]float64{Ally: 0, Enemy: 0}
 
-	for c1, cell1 := range potSta.s.grid {
+	for c1, cell1 := range s.grid {
 		if cell1.race == Neutral {
 			continue
 		}
 		counts[cell1.race] += float64(cell1.count)
 
 		// Loop to compute stats on the possible battle
-		for c2, cell2 := range potSta.s.grid {
+		for c2, cell2 := range s.grid {
 			if c1 == c2 || cell1.race == cell2.race {
 				continue
 			}
@@ -144,10 +144,17 @@ func scoreState(potSta potentialState, ourRace race) float64 {
 	// TODO: make those parameters of a heuristic struct and try to tweak them
 	// TODO: distance power alpha instead of distance power 1
 	const (
-		countCoeff         = 2
-		battleCoeff        = 0.2
-		neutralBattleCoeff = 0.5
+		countCoeff         = 1
+		battleCoeff        = 0.
+		neutralBattleCoeff = 0.
 	)
+
+	// Win and lose cases
+	if counts[ourRace] == 0 {
+		return -1e64
+	} else if counts[ourRace.opponent()] == 0 {
+		return 1e64
+	}
 
 	for _, heuristic := range []struct {
 		coeff  float64
@@ -168,5 +175,5 @@ func scoreState(potSta potentialState, ourRace race) float64 {
 		total += score * heuristic.coeff
 	}
 
-	return total * potSta.probability
+	return total
 }

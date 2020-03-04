@@ -1,42 +1,52 @@
 package client
 
-// negamaxAlpha returns a score and a turn
-func negamaxAlpha(state state, alpha float64, race race, depth uint8) (Coup, float64) {
+import (
+	"math"
+)
+
+// minimax computes the best coup going at most at depth depth
+func minimax(state state, race race, depth uint8) (Coup, float64) {
 	bestCoup := Coup{}
-	maxScore := -1e64
 
-	// TODO: maybe move it after if we know that we already hit the depth limit
-	coups := generateCoups(state, race)
-
-	if depth <= 0 || len(coups) == 0 {
-		potentialState := potentialState{s: state, probability: 1}
-		score := scoreState(potentialState, race)
-		return bestCoup, score
+	// Max depth reached
+	if depth <= 0 {
+		return bestCoup, scoreState(state, Ally)
 	}
 
-	for _, coup := range coups {
-		potentialStates := applyCoup(state, race, coup)
+	coups := generateCoups(state, race)
+	// No moves found
+	if len(coups) == 0 {
+		return bestCoup, scoreState(state, Ally)
+	}
 
-		score := 0.0
-		for _, potentialState := range potentialStates {
-			_, tmpScore := negamaxAlpha(potentialState.s, maxScore, race.opponent(), depth-1)
-			score += tmpScore * potentialState.probability
+	// Chose if we want to maximize (us) or minimize (enemy) our score
+	value := -1e64
+	f := math.Max
+	if race == Enemy {
+		value = 1e64
+		f = math.Min
+	}
+
+	// for each generated coup, we compute the list of potential outcomes and compute an average score
+	// weighted by the probabilities of these potential outcomes
+	for _, coup := range coups {
+		outcomes := applyCoup(state, race, coup)
+
+		score := 0.
+		// log.Printf("depth: %d", depth)
+		for _, outcome := range outcomes {
+			_, tmpScore := minimax(outcome.s, race.opponent(), depth-1)
+			score += tmpScore * outcome.probability
 		}
 
-		score = -score
+		// log.Printf("minimax score: %f at depth: %d for race: %v and coup: %+v, grid: %+v, potential: %+v", score, depth, race, coup, state.grid, outcomes)
 
-		if score > maxScore {
-			maxScore = score
+		newValue := f(value, score)
+		if newValue == score {
+			value = newValue
 			bestCoup = coup
 		}
-
-		// TODO: if memory is an issue, we could try to implement an undoCoup function, that would allow to reduce the number of copies made
-
-		// TODO: uncomment me
-		// if maxScore > - alpha {
-		//	break
-		// }
-
 	}
-	return bestCoup, maxScore
+
+	return bestCoup, value
 }

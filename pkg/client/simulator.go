@@ -11,11 +11,11 @@ type potentialState struct {
 }
 
 // applyCoup computes the possibles states after applying a Coup (a list of moves)
-func applyCoup(s state, race race, coup Coup) []potentialState {
+func applyCoup(origState state, race race, coup Coup) []potentialState {
 	// TODO improve this function, it's not really efficient, some moves are
 
 	// Start with the current state with probability 1
-	states := []potentialState{{s: s.deepCopy(), probability: 1}}
+	states := []potentialState{{s: origState.deepCopy(), probability: 1}}
 
 	// Sort moves by target cell
 	sort.Sort(coup)
@@ -34,9 +34,11 @@ func applyCoup(s state, race race, coup Coup) []potentialState {
 			// TODO: method on state to do this, since this could be used in other places
 			if cell.count == move.N {
 				delete(state.s.grid, move.Start)
-			} else {
+			} else if cell.count > move.N {
 				cell.count -= move.N
 				state.s.grid[move.Start] = cell
+			} else {
+				panic(fmt.Sprintf("Invalid move ! Move: %+v, cell: %+v, race: %v", move, cell, race))
 			}
 		}
 
@@ -44,8 +46,8 @@ func applyCoup(s state, race race, coup Coup) []potentialState {
 		if move.End != lastEndCoordinates {
 
 			// Ensure that the move is legal
-			if s.grid[move.Start].race != race {
-				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, s.grid[move.Start].race))
+			if origState.grid[move.Start].race != race {
+				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, origState.grid[move.Start].race))
 			}
 
 			states = applyMoveOnPossibleStates(states, race, lastEndCoordinates, count)
@@ -148,15 +150,16 @@ func applyMove(s state, race race, target Coordinates, count uint8) []potentialS
 // winProbability of winning for the attaquant 1 with an effectif E1, agains E2
 // E2 might be Neutral
 func winProbability(E1, E2 uint8, E2isNeutral bool) float64 {
+	if E1 == E2 {
+		return 0.5
+	}
 
 	// True by property
-	if (E2isNeutral && E1 >= E2) || (!E2isNeutral && float64(E1) >= 1.5*float64(E2)) {
+	if (E2isNeutral && E1 > E2) || (!E2isNeutral && float64(E1) >= 1.5*float64(E2)) {
 		return 1
 	}
 
-	if E1 == E2 {
-		return 0.5
-	} else if E1 < E2 {
+	if E1 < E2 {
 		return float64(E1) / (2 * float64(E2))
 	} else {
 		return (float64(E1) / float64(E2)) - 0.5

@@ -2,13 +2,13 @@ package client
 
 import (
 	"github.com/stretchr/testify/assert"
+	"log"
 	"testing"
 )
 
-const testAlpha = 10
 const testDepth = 5
 
-func TestNegamax(t *testing.T) {
+func TestMinMax(t *testing.T) {
 
 	t.Run("case1", func(t *testing.T) {
 		// N neutral, A ally, E enemy
@@ -16,7 +16,6 @@ func TestNegamax(t *testing.T) {
 		// XXX | 08A | XXX
 		// 12E | XXX | XXX
 
-		// Here our only chance to win is to force fight before the enemy gets a better army
 		startState := state{
 			grid: map[Coordinates]cell{
 				{X: 0, Y: 0}: {
@@ -40,11 +39,11 @@ func TestNegamax(t *testing.T) {
 			width:  3,
 		}
 
-		coup, _ := negamaxAlpha(startState, testAlpha, Ally, testDepth)
+		coup, _ := minimax(startState, Ally, testDepth)
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 1, Y: 1},
 			N:     8,
-			End:   Coordinates{X: 0, Y: 2},
+			End:   Coordinates{X: 2, Y: 0},
 		}}, coup)
 	})
 
@@ -79,11 +78,48 @@ func TestNegamax(t *testing.T) {
 			width:  10,
 		}
 
-		coup, _ := negamaxAlpha(startState, testAlpha, Ally, testDepth)
+		coup, _ := minimax(startState, Ally, testDepth)
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 0, Y: 0},
 			N:     8,
 			End:   Coordinates{X: 1, Y: 0},
+		}}, coup)
+	})
+
+	t.Run("case3", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// XXX | XXX | XXX | XXX
+		// XXX | 68A | XXX | XXX
+		// XXX | XXX | 07N | XXX
+		// XXX | XXX | XXX | XXX
+		// Far away: 75Enemy
+
+		startState := state{
+			grid: map[Coordinates]cell{
+				{X: 1, Y: 1}: {
+					race:  Ally,
+					count: 68,
+				},
+				{X: 2, Y: 2}: {
+					race:  Neutral,
+					count: 7,
+				},
+				{X: 7, Y: 4}: {
+					race:  Enemy,
+					count: 75,
+				},
+			},
+			height: 10,
+			width:  10,
+		}
+
+		log.Printf("start: %+v", startState)
+		coup, score := minimax(startState, Ally, testDepth)
+		log.Printf("best %+v, %f", coup, score)
+		assert.Equal(t, Coup{Move{
+			Start: Coordinates{X: 1, Y: 1},
+			N:     68,
+			End:   Coordinates{X: 2, Y: 2},
 		}}, coup)
 	})
 }
@@ -108,7 +144,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 		s := startState.deepCopy()
 
 		coup := Coup{
-			{Start: Coordinates{X: 1, Y: 1}, End: Coordinates{0, 0}, N: 10},
+			{Start: Coordinates{X: 1, Y: 1}, End: Coordinates{0, 0}, N: 11},
 		}
 
 		potentialStates := applyCoup(s, Ally, coup)
@@ -120,11 +156,11 @@ func TestSimulationAllyNeutral(t *testing.T) {
 				grid: map[Coordinates]cell{
 					{X: 0, Y: 0}: {
 						race:  Ally,
-						count: 20,
+						count: 21,
 					},
 					{X: 1, Y: 1}: {
 						race:  Ally,
-						count: 10,
+						count: 9,
 					},
 				},
 				height: 2,
@@ -180,13 +216,13 @@ func TestSimulationAllyNeutral(t *testing.T) {
 		}, potentialStates[1])
 	})
 
-	t.Run("negamax decision", func(t *testing.T) {
+	t.Run("minmax decision", func(t *testing.T) {
 		s := startState.deepCopy()
 		s.grid[Coordinates{X: 1, Y: 0}] = cell{
 			race:  Enemy,
 			count: 15,
 		}
-		coup, _ := negamaxAlpha(s, testAlpha, Ally, testDepth)
+		coup, _ := minimax(s, Ally, testDepth)
 
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 1, Y: 1},

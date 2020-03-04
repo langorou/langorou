@@ -2,6 +2,7 @@ github.com/Succo/twilight v0.0.0-20180129152954-8bf8dbe35876 h1:8TjS11XEfby0BNZf
 github.com/Succo/twilight v0.0.0-20180129152954-8bf8dbe35876/go.mod h1:8ycNa4Qz4nI6Y2gPrWwhXqZ7omUf+sEu8IkcBFxK/IU=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/langorou/twilight v0.0.0-20200221102340-7363eef52e26 h1:TNn9wp5N0tnzKX93vFLUZGyQAkgKU2in+lVK6LIJa1M=
 github.com/langorou/twilight v0.0.0-20200221102340-7363eef52e26/go.mod h1:2Uj64yEAmO/Mu6BeZv+rF/IibuNO+jyshQd7VuS45ak=
@@ -29,6 +30,7 @@ gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
+gopkg.in/yaml.v2 v2.2.8 h1:obN1ZagJSUGI0Ek/LBmuj4SNLPfIny3KsKFopxRdj10=
 gopkg.in/yaml.v2 v2.2.8/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 launchpad.net/xmlpath v0.0.0-20130614043138-000000000004 h1:B8nNZBUrx8YufDCAJjvO/lVs4GxXMQHyrjwJdJzXMFg=
 launchpad.net/xmlpath v0.0.0-20130614043138-000000000004/go.mod h1:vqyExLOM3qBx7mvYRkoxjSCF945s0mbe7YynlKYXtsA=
