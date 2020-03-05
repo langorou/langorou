@@ -15,7 +15,7 @@ func NewMinMaxIA(depth uint8) *MinMaxIA {
 }
 
 func (m *MinMaxIA) Play(state state) Coup {
-	coup, score := minimax(state, Ally, m.depth)
+	coup, score := minimax(state, m.depth)
 	log.Printf("MinMaxIA computed a coup with score: %f", score)
 	return coup
 }

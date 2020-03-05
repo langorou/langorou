@@ -1,18 +1,16 @@
 package client
 
 import (
-	"log"
 	"math"
-	"sort"
 )
 
 const (
 	posInfinity = math.MaxFloat64
-	negInfinity = - math.MaxFloat64
+	negInfinity = -math.MaxFloat64
 )
 
-func minimax(state state, race race, depth uint8) (Coup, float64) {
-	return alphabeta(state, race, negInfinity, posInfinity, depth)
+func minimax(state state, depth uint8) (Coup, float64) {
+	return alphabeta(state, Ally, negInfinity, posInfinity, depth)
 }
 
 // minimax computes the best coup going at most at depth depth

@@ -39,7 +39,7 @@ func TestMinMax(t *testing.T) {
 			width:  3,
 		}
 
-		coup, _ := minimax(startState, Ally, testDepth)
+		coup, _ := minimax(startState, testDepth)
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 1, Y: 1},
 			N:     8,
@@ -78,7 +78,7 @@ func TestMinMax(t *testing.T) {
 			width:  10,
 		}
 
-		coup, _ := minimax(startState, Ally, testDepth)
+		coup, _ := minimax(startState, testDepth)
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 0, Y: 0},
 			N:     8,
@@ -222,12 +222,13 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			race:  Enemy,
 			count: 15,
 		}
-		coup, _ := minimax(s, Ally, testDepth)
 
+		// Probability 5/6 of winning if we attack the enemy directly
+		// only 3/4 if we get the villagers but the enemy atack us after
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 1, Y: 1},
 			N:     20,
-			End:   Coordinates{X: 0, Y: 0},
+			End:   Coordinates{X: 1, Y: 0},
 		}}, coup)
 	})
 }
