@@ -34,6 +34,8 @@ func (c *Cell) IsEmpty() bool {
 	return c.Count == 0
 }
 
+// State represents a game state, disclaimer we should NOT modify Grid directly, use SetCell, IncreaseCell and DecreaseCell
+// methods instead, Grid is only available to ease it's reading process
 type State struct {
 	Grid            map[Coordinates]Cell
 	Height          uint8
@@ -107,6 +109,7 @@ func (s *State) EmptyCell(pos Coordinates) {
 }
 
 func (s State) allies() float64 {
+	// TODO: could be computed iteratively from setcell and friends
 	count := uint8(0)
 
 	for _, c := range s.Grid {

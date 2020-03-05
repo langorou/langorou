@@ -10,11 +10,11 @@ const (
 	negInfinity = -math.MaxFloat64
 )
 
-func minimax(state model.State, depth uint8) (model.Coup, float64) {
+func findBestCoup(state model.State, depth uint8) (model.Coup, float64) {
 	return alphabeta(state, model.Ally, negInfinity, posInfinity, depth)
 }
 
-// minimax computes the best coup going at most at depth depth
+// alphabeta computes the best coup going at most at depth depth
 func alphabeta(state model.State, race model.Race, alpha float64, beta float64, depth uint8) (model.Coup, float64) {
 	bestCoup := model.Coup{}
 
@@ -49,7 +49,7 @@ func alphabeta(state model.State, race model.Race, alpha float64, beta float64, 
 			score += tmpScore * outcome.probability
 		}
 
-		// log.Printf("cumulative: %f, minimax score: %f at depth: %d for race: %v and coup: %+v, grid: %+v, potential: %+v", state.cumScore, score, depth, race, coup, state.grid, outcomes)
+		// log.Printf("cumulative: %f, findBestCoup score: %f at depth: %d for race: %v and coup: %+v, grid: %+v, potential: %+v", state.cumScore, score, depth, race, coup, state.grid, outcomes)
 
 		if f(value, score) == score { // score >= value if max playing or value >= score if min playing
 			value = score

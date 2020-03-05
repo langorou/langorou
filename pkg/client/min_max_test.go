@@ -22,7 +22,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{Y: 2}, model.Enemy, 12)
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 8)
 
-		coup, _ := minimax(startState, testDepth)
+		coup, _ := findBestCoup(startState, testDepth)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     8,
@@ -44,7 +44,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Neutral, 10)
 		startState.SetCell(model.Coordinates{X: 8, Y: 8}, model.Enemy, 8)
 
-		coup, _ := minimax(startState, testDepth)
+		coup, _ := findBestCoup(startState, testDepth)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 0, Y: 0},
 			N:     8,
@@ -65,7 +65,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 2, Y: 2}, model.Neutral, 7)
 		startState.SetCell(model.Coordinates{X: 7, Y: 4}, model.Enemy, 75)
 
-		coup, _ := minimax(startState, testDepth)
+		coup, _ := findBestCoup(startState, testDepth)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     68,
@@ -122,7 +122,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 	t.Run("minmax decision", func(t *testing.T) {
 		s := startState.Copy(false)
 		s.SetCell(model.Coordinates{X: 1}, model.Enemy, 15)
-		coup, _ := minimax(s, testDepth)
+		coup, _ := findBestCoup(s, testDepth)
 
 		// Probability 5/6 of winning if we attack the enemy directly
 		// only 3/4 if we get the villagers but the enemy attacks us after
