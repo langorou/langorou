@@ -1,11 +1,18 @@
 package client
 
 import (
+	"log"
 	"math"
+	"sort"
+)
+
+const (
+	posInfinity = math.MaxFloat64
+	negInfinity = - math.MaxFloat64
 )
 
 func minimax(state state, race race, depth uint8) (Coup, float64) {
-	return alphabeta(state, race, math.SmallestNonzeroFloat64, math.MaxFloat64, depth)
+	return alphabeta(state, race, negInfinity, posInfinity, depth)
 }
 
 // minimax computes the best coup going at most at depth depth
@@ -24,10 +31,10 @@ func alphabeta(state state, race race, alpha float64, beta float64, depth uint8)
 	}
 
 	// Chose if we want to maximize (us) or minimize (enemy) our score
-	value := math.SmallestNonzeroFloat64
+	value := negInfinity
 	f := math.Max
 	if race == Enemy {
-		value = math.MaxFloat64
+		value = posInfinity
 		f = math.Min
 	}
 
@@ -45,10 +52,10 @@ func alphabeta(state state, race race, alpha float64, beta float64, depth uint8)
 
 		// log.Printf("minimax score: %f at depth: %d for race: %v and coup: %+v, grid: %+v, potential: %+v", score, depth, race, coup, state.grid, outcomes)
 
-		newValue := f(value, score)
-		if newValue == score {
-			value = newValue
+		if f(value, score) == score { // score >= value if max playing or value >= score if min playing
+			value = score
 			bestCoup = coup
+			// log.Printf("better value found %f: depth: %d, race: %v", value, depth, race)
 		}
 
 		// Check for possible cuts

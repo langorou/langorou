@@ -1,6 +1,7 @@
 package client
 
 import (
+	"log"
 	"math/rand"
 	"time"
 )
@@ -18,6 +19,11 @@ func (dia *DumbIA) Play(state state) Coup {
 	time.Sleep(time.Second)
 
 	coups := generateCoups(state, Ally)
+	log.Printf("coups: %v", coups)
+
+	if len(coups) == 0 {
+		return nil
+	}
 
 	return coups[rand.Intn(len(coups))]
 }
