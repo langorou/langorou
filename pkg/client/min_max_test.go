@@ -114,7 +114,7 @@ func TestMinMax(t *testing.T) {
 		}
 
 		log.Printf("start: %+v", startState)
-		coup, score := minimax(startState, Ally, testDepth)
+		coup, score := minimax(startState, testDepth)
 		log.Printf("best %+v, %f", coup, score)
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 1, Y: 1},
@@ -222,6 +222,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			race:  Enemy,
 			count: 15,
 		}
+		coup, _ := minimax(s, testDepth)
 
 		// Probability 5/6 of winning if we attack the enemy directly
 		// only 3/4 if we get the villagers but the enemy atack us after
