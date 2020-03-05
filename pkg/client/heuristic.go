@@ -1,20 +1,21 @@
 package client
 
 import (
+	"github.com/langorou/langorou/pkg/client/model"
 	"math"
 )
 
 // generateCoups generates coups for a given state and a given race
 // While a player _can_ make multiple moves within a coup, for now this function only
 // returns individual moves.
-func generateCoups(s state, race race) []Coup {
-	coups := []Coup{}
+func generateCoups(s model.State, race model.Race) []model.Coup {
+	coups := []model.Coup{}
 
-	for coord, cell := range s.grid {
-		if cell.race == race {
+	for coord, cell := range s.Grid {
+		if cell.Race == race {
 			moves := generateMovesFromCell(s, coord)
 			for _, move := range moves {
-				coups = append(coups, Coup{move})
+				coups = append(coups, model.Coup{move})
 			}
 		}
 	}
@@ -29,32 +30,32 @@ type transformation struct {
 	Y int8
 }
 
-func transform(s state, c Coordinates, t transformation) (res Coordinates, ok bool) {
-	if s.width == 0 {
+func transform(s model.State, c model.Coordinates, t transformation) (res model.Coordinates, ok bool) {
+	if s.Width == 0 {
 		return c, false
 	}
 
 	xRes := uint8(int8(c.X) + t.X)
-	if (xRes < 0) || (xRes >= s.width) {
+	if (xRes < 0) || (xRes >= s.Width) {
 		return c, false
 	}
 
 	yRes := uint8(int8(c.Y) + t.Y)
-	if (yRes < 0) || (yRes >= s.height) {
+	if (yRes < 0) || (yRes >= s.Height) {
 		return c, false
 	}
 
-	return Coordinates{xRes, yRes}, true
+	return model.Coordinates{X: xRes, Y: yRes}, true
 }
 
-func generateMovesFromCell(s state, source Coordinates) []Move {
+func generateMovesFromCell(s model.State, source model.Coordinates) []model.Move {
 	// Simplification: as long as we are doing one move per turn, we are better
 	// off moving all units and not a subset.
 	// This is not true anymore if we do multiple moves per turn, as keeping
 	// some units in the source cell allows us to do another attack (on another
 	// cell) in the same turn.
 
-	moves := make([]Move, 0, 8)
+	moves := make([]model.Move, 0, 8)
 
 	// TODO: can be optimized
 	transforms := []transformation{
@@ -73,68 +74,68 @@ func generateMovesFromCell(s state, source Coordinates) []Move {
 		if !ok {
 			continue
 		}
-		moves = append(moves, Move{Start: source, N: s.grid[source].count, End: target})
+		moves = append(moves, model.Move{Start: source, N: s.Grid[source].Count, End: target})
 	}
 	return moves
 }
 
 // scoreNeutralBattle scores the issue of a battle between a monster and a neutral group
-func scoreNeutralBattle(c1, c2 Coordinates, cell1, cell2 cell) float64 {
-	proba := winProbability(cell1.count, cell2.count, true)
+func scoreNeutralBattle(c1, c2 model.Coordinates, cell1, cell2 model.Cell) float64 {
+	proba := winProbability(cell1.Count, cell2.Count, true)
 	distance := c1.Distance(c2)
 
 	// probable gain of population
 	probableGain := math.Max(
 		0,
-		proba*float64(cell1.count+cell2.count)-float64(cell1.count),
+		proba*float64(cell1.Count+cell2.Count)-float64(cell1.Count),
 	)
 
 	return probableGain / distance
 }
 
 // scoreMonsterBattle scores the issue of a battle between monsters
-func scoreMonsterBattle(c1, c2 Coordinates, cell1, cell2 cell) (float64, float64) {
+func scoreMonsterBattle(c1, c2 model.Coordinates, cell1, cell2 model.Cell) (float64, float64) {
 	distance := c1.Distance(c2)
 
 	// p1 is for 1 attacks 2
-	p1 := winProbability(cell1.count, cell2.count, false)
+	p1 := winProbability(cell1.Count, cell2.Count, false)
 	// p2 is for 2 attacks 1
-	p2 := winProbability(cell2.count, cell1.count, false)
+	p2 := winProbability(cell2.Count, cell1.Count, false)
 
-	s1 := p1*float64(cell1.count+cell2.count) - float64(cell2.count)
-	s2 := p2*float64(cell2.count+cell1.count) - float64(cell1.count)
+	s1 := p1*float64(cell1.Count+cell2.Count) - float64(cell2.Count)
+	s2 := p2*float64(cell2.Count+cell1.Count) - float64(cell1.Count)
 
 	return s1 / distance, s2 / distance
 }
 
 // scoreState is the heuristic for our IA
-func scoreState(s state, ourRace race) float64 {
+func scoreState(s model.State, ourRace model.Race) float64 {
 
 	// different counts participating in the heuristic
-	counts := map[race]float64{Ally: 0, Enemy: 0}
-	battleCounts := map[race]float64{Ally: 0, Enemy: 0}
-	neutralBattleCounts := map[race]float64{Ally: 0, Enemy: 0}
+	counts := map[model.Race]float64{model.Ally: 0, model.Enemy: 0}
+	battleCounts := map[model.Race]float64{model.Ally: 0, model.Enemy: 0}
+	neutralBattleCounts := map[model.Race]float64{model.Ally: 0, model.Enemy: 0}
 
-	for c1, cell1 := range s.grid {
-		if cell1.race == Neutral {
+	for c1, cell1 := range s.Grid {
+		if cell1.Race == model.Neutral {
 			continue
 		}
-		counts[cell1.race] += float64(cell1.count)
+		counts[cell1.Race] += float64(cell1.Count)
 
 		// Loop to compute stats on the possible battle
-		for c2, cell2 := range s.grid {
-			if c1 == c2 || cell1.race == cell2.race {
+		for c2, cell2 := range s.Grid {
+			if c1 == c2 || cell1.Race == cell2.Race {
 				continue
 			}
 
-			if cell2.race == Neutral {
+			if cell2.Race == model.Neutral {
 				// TODO: average here since we can count a battle multiple times
-				neutralBattleCounts[cell1.race] += scoreNeutralBattle(c1, c2, cell1, cell2)
-			} else if cell2.race == cell1.race.opponent() {
+				neutralBattleCounts[cell1.Race] += scoreNeutralBattle(c1, c2, cell1, cell2)
+			} else if cell2.Race == cell1.Race.Opponent() {
 				// TODO: average here since we can count a battle multiple times
 				g1, g2 := scoreMonsterBattle(c1, c2, cell1, cell2)
-				battleCounts[cell1.race] += g1
-				battleCounts[cell2.race] += g2
+				battleCounts[cell1.Race] += g1
+				battleCounts[cell2.Race] += g2
 			}
 		}
 	}
@@ -147,19 +148,21 @@ func scoreState(s state, ourRace race) float64 {
 		countCoeff         = 1
 		battleCoeff        = 0.5
 		neutralBattleCoeff = 0.5
-		cumScoreCoeff = 0.001
+		cumScoreCoeff      = 0.001
 	)
+
+	cumScore := s.CumulativeScore
 
 	// Win and lose cases
 	if counts[ourRace] == 0 {
-		return -1e10 + s.cumScore
-	} else if counts[ourRace.opponent()] == 0 {
-		return 1e10 + s.cumScore
+		return -1e10 + cumScore
+	} else if counts[ourRace.Opponent()] == 0 {
+		return 1e10 + cumScore
 	}
 
 	for _, heuristic := range []struct {
 		coeff  float64
-		scores map[race]float64
+		scores map[model.Race]float64
 	}{
 		{countCoeff, counts},
 		{battleCoeff, battleCounts},
@@ -169,12 +172,12 @@ func scoreState(s state, ourRace race) float64 {
 		for race, count := range heuristic.scores {
 			if race == ourRace {
 				score += count
-			} else if race.opponent() == ourRace {
+			} else if race.Opponent() == ourRace {
 				score -= count
 			}
 		}
 		total += score * heuristic.coeff
 	}
 
-	return total + (s.cumScore*cumScoreCoeff)
+	return total + (cumScore * cumScoreCoeff)
 }

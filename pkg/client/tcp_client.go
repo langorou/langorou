@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"github.com/langorou/langorou/pkg/client/model"
 	"log"
 	"net"
 
@@ -32,7 +33,7 @@ const (
 // TCPClient handles the connection to the server, and also encapsulate the game
 type TCPClient struct {
 	conn         net.Conn
-	ourRaceCoord Coordinates
+	ourRaceCoord model.Coordinates
 	isWerewolf   bool // We assume we're a vampire
 	game         *Game
 }
@@ -76,7 +77,7 @@ func (c *TCPClient) SendName() error {
 }
 
 // SendMove to the server
-func (c *TCPClient) SendMove(moves []Move) error {
+func (c *TCPClient) SendMove(moves []model.Move) error {
 
 	msg := make([]byte, 3+1+5*len(moves))
 
@@ -128,12 +129,12 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 			return HUM, err
 		}
 		n := buf[0]
-		coords := make([]Coordinates, n)
+		coords := make([]model.Coordinates, n)
 		for i := 0; i < int(n); i++ {
 			if _, err := c.conn.Read(buf[:2]); err != nil {
 				return HUM, err
 			}
-			coords[i] = Coordinates{
+			coords[i] = model.Coordinates{
 				X: buf[0],
 				Y: buf[1],
 			}
@@ -149,7 +150,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		x := buf[0]
 		y := buf[1]
 
-		c.ourRaceCoord = Coordinates{X: x, Y: y}
+		c.ourRaceCoord = model.Coordinates{X: x, Y: y}
 		log.Printf("%s: Received our race coordinates: %+v", command, c.ourRaceCoord)
 
 		return HME, nil
@@ -159,15 +160,15 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 			return UPD, err
 		}
 		n := buf[0]
-		changes := make([]Changes, n)
+		changes := make([]model.Changes, n)
 		for i := 0; i < int(n); i++ {
 			if _, err := c.conn.Read(buf[:5]); err != nil {
 				return UPD, err
 			}
 
 			if c.isWerewolf {
-				changes[i] = Changes{
-					Coords: Coordinates{
+				changes[i] = model.Changes{
+					Coords: model.Coordinates{
 						X: buf[0],
 						Y: buf[1],
 					},
@@ -176,8 +177,8 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 					Enemy:   buf[3], // buf[3] represents the number of Vampires
 				}
 			} else {
-				changes[i] = Changes{
-					Coords: Coordinates{
+				changes[i] = model.Changes{
+					Coords: model.Coordinates{
 						X: buf[0],
 						Y: buf[1],
 					},
@@ -196,7 +197,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 			return MAP, err
 		}
 		n := buf[0]
-		changes := make([]Changes, n)
+		changes := make([]model.Changes, n)
 
 		flip := false // If we see that our start position is one of werewolf, we need to flip ally and enemy
 		for i := 0; i < int(n); i++ {
@@ -204,8 +205,8 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 				return MAP, err
 			}
 
-			changes[i] = Changes{
-				Coords: Coordinates{
+			changes[i] = model.Changes{
+				Coords: model.Coordinates{
 					X: buf[0],
 					Y: buf[1],
 				},
@@ -241,7 +242,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		log.Printf("%s: end of the game", command)
 		// we reset some variables
 		c.isWerewolf = false
-		c.ourRaceCoord = Coordinates{}
+		c.ourRaceCoord = model.Coordinates{}
 
 		return END, c.game.End()
 

@@ -1,5 +1,7 @@
 package client
 
+import "github.com/langorou/langorou/pkg/client/model"
+
 type IA interface {
-	Play(state state) Coup
+	Play(state model.State) model.Coup
 }

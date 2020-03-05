@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/langorou/langorou/pkg/client/model"
 	"log"
 	"math/rand"
 	"time"
@@ -14,11 +15,11 @@ func NewDumbIA() *DumbIA {
 	return &DumbIA{}
 }
 
-func (dia *DumbIA) Play(state state) Coup {
+func (dia *DumbIA) Play(state model.State) model.Coup {
 	// Simulate computation
 	time.Sleep(time.Second)
 
-	coups := generateCoups(state, Ally)
+	coups := generateCoups(state, model.Ally)
 	log.Printf("coups: %v", coups)
 
 	if len(coups) == 0 {

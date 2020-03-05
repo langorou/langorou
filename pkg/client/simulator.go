@@ -2,20 +2,21 @@ package client
 
 import (
 	"fmt"
+	"github.com/langorou/langorou/pkg/client/model"
 	"sort"
 )
 
 type potentialState struct {
-	s           state
+	s           model.State
 	probability float64
 }
 
 // applyCoup computes the possibles states after applying a Coup (a list of moves)
-func applyCoup(origState state, race race, coup Coup) []potentialState {
+func applyCoup(origState model.State, race model.Race, coup model.Coup) []potentialState {
 	// TODO improve this function, it's not really efficient, some moves are
 
 	// Start with the current state with probability 1
-	states := []potentialState{{s: origState.deepCopy(1), probability: 1}}
+	states := []potentialState{{s: origState.Copy(true), probability: 1}}
 
 	// Sort moves by target cell
 	sort.Sort(coup)
@@ -29,25 +30,15 @@ func applyCoup(origState state, race race, coup Coup) []potentialState {
 
 		// Move the start populations on each possible states
 		for _, state := range states {
-			cell := state.s.grid[move.Start]
-
-			// TODO: method on state to do this, since this could be used in other places
-			if cell.count == move.N {
-				delete(state.s.grid, move.Start)
-			} else if cell.count > move.N {
-				cell.count -= move.N
-				state.s.grid[move.Start] = cell
-			} else {
-				panic(fmt.Sprintf("Invalid move ! Move: %+v, cell: %+v, race: %v", move, cell, race))
-			}
+			state.s.DecreaseCell(move.Start, move.N)
 		}
 
 		// If the target cell is no more the same, stop aggregating and compute the possible states
 		if move.End != lastEndCoordinates {
 
 			// Ensure that the move is legal
-			if origState.grid[move.Start].race != race {
-				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, origState.grid[move.Start].race))
+			if origState.Grid[move.Start].Race != race {
+				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, origState.Grid[move.Start].Race))
 			}
 
 			states = applyMoveOnPossibleStates(states, race, lastEndCoordinates, count)
@@ -66,7 +57,7 @@ func applyCoup(origState state, race race, coup Coup) []potentialState {
 
 // applyMoveOnPossibleStates is used by applyCoup to iteratively compute the list of possible states
 // that can be reached from a state and a list of moves (a coup)
-func applyMoveOnPossibleStates(states []potentialState, race race, target Coordinates, count uint8) []potentialState {
+func applyMoveOnPossibleStates(states []potentialState, race model.Race, target model.Coordinates, count uint8) []potentialState {
 	// We will have at lest len(states)
 	result := make([]potentialState, 0, len(states))
 
@@ -84,60 +75,53 @@ func applyMoveOnPossibleStates(states []potentialState, race race, target Coordi
 }
 
 // applyMove computes the possible next states from a given state and ONLY ONE move
-func applyMove(s state, race race, target Coordinates, count uint8) []potentialState {
+func applyMove(s model.State, race model.Race, target model.Coordinates, count uint8) []potentialState {
 
-	endCell, ok := s.grid[target]
+	endCell := s.Grid[target]
 
-	if !ok || endCell.isEmpty() || race == endCell.race {
+	if endCell.IsEmpty() || race == endCell.Race {
 		// nobody on there, or same race as ours, no battle and we can just increase the count
-		newState := s.deepCopy(0)
+		newState := s.Copy(false)
 
 		// Update the cells
-		endCell.count += count
-		endCell.race = race
-
-		newState.grid[target] = endCell
-
+		newState.SetCell(target, race, endCell.Count+count)
 		return []potentialState{{s: newState, probability: 1}}
 	}
 
 	// Fight with the enemy or neutral
 	// We use a float here for later computation
 	var isNeutral uint8 = 0
-	if endCell.race == Neutral {
+	if endCell.Race == model.Neutral {
 		isNeutral = 1
 	}
 
-	P := winProbability(count, endCell.count, isNeutral == 1)
+	P := winProbability(count, endCell.Count, isNeutral == 1)
 
 	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
 	if P == 1 {
 		// We surely win, same as "nobody there"
-		newState := s.deepCopy(0)
-
-		endCell.count = count + (isNeutral * endCell.count) // if we totally win against Neutral, we convert all of them
-		endCell.race = race
-
-		newState.grid[target] = endCell
+		newState := s.Copy(false)
+		newState.SetCell(target, race, count+(isNeutral*endCell.Count)) // if we totally win against Neutral, we convert all of them
 
 		return []potentialState{{s: newState, probability: 1}}
 	}
 
-	winState := s.deepCopy(0)
+	winState := s.Copy(false)
 
-	winState.grid[target] = cell{
+	winState.SetCell(
+		target,
+		race,
 		// each ally has probability P to survive. Against neutral, we have a probability P to convert them
-		count: uint8(P*float64(count) + float64(isNeutral*endCell.count)*P),
-		race:  race,
-	}
+		uint8(P*float64(count)+float64(isNeutral*endCell.Count)*P),
+	)
 
-	lossState := s.deepCopy(0)
-
-	lossState.grid[target] = cell{
+	lossState := s.Copy(false)
+	lossState.SetCell(
+		target,
+		endCell.Race,
 		// each enemy has probability 1-P to survive
-		count: uint8((1 - P) * float64(endCell.count)),
-		race:  endCell.race,
-	}
+		uint8((1-P)*float64(endCell.Count)),
+	)
 
 	return []potentialState{
 		{s: winState, probability: P},

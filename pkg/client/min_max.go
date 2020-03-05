@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/langorou/langorou/pkg/client/model"
 	"math"
 )
 
@@ -9,29 +10,29 @@ const (
 	negInfinity = -math.MaxFloat64
 )
 
-func minimax(state state, depth uint8) (Coup, float64) {
-	return alphabeta(state, Ally, negInfinity, posInfinity, depth)
+func minimax(state model.State, depth uint8) (model.Coup, float64) {
+	return alphabeta(state, model.Ally, negInfinity, posInfinity, depth)
 }
 
 // minimax computes the best coup going at most at depth depth
-func alphabeta(state state, race race, alpha float64, beta float64, depth uint8) (Coup, float64) {
-	bestCoup := Coup{}
+func alphabeta(state model.State, race model.Race, alpha float64, beta float64, depth uint8) (model.Coup, float64) {
+	bestCoup := model.Coup{}
 
 	// Max depth reached
 	if depth <= 0 {
-		return bestCoup, scoreState(state, Ally)
+		return bestCoup, scoreState(state, model.Ally)
 	}
 
 	coups := generateCoups(state, race)
 	// No moves found
 	if len(coups) == 0 {
-		return bestCoup, scoreState(state, Ally)
+		return bestCoup, scoreState(state, model.Ally)
 	}
 
 	// Chose if we want to maximize (us) or minimize (enemy) our score
 	value := negInfinity
 	f := math.Max
-	if race == Enemy {
+	if race == model.Enemy {
 		value = posInfinity
 		f = math.Min
 	}
@@ -44,7 +45,7 @@ func alphabeta(state state, race race, alpha float64, beta float64, depth uint8)
 		score := 0.
 		// log.Printf("depth: %d", depth)
 		for _, outcome := range outcomes {
-			_, tmpScore := alphabeta(outcome.s, race.opponent(), alpha, beta, depth-1)
+			_, tmpScore := alphabeta(outcome.s, race.Opponent(), alpha, beta, depth-1)
 			score += tmpScore * outcome.probability
 		}
 
@@ -57,7 +58,7 @@ func alphabeta(state state, race race, alpha float64, beta float64, depth uint8)
 		}
 
 		// Check for possible cuts
-		if race == Enemy {
+		if race == model.Enemy {
 			// alpha cut
 			if alpha >= value {
 				return bestCoup, value
