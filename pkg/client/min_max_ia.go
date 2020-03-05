@@ -8,7 +8,7 @@ type MinMaxIA struct {
 
 var _ IA = &MinMaxIA{}
 
-func NewMinMaxIA(alpha float64, depth uint8) *MinMaxIA {
+func NewMinMaxIA(depth uint8) *MinMaxIA {
 	return &MinMaxIA{
 		depth: depth,
 	}
