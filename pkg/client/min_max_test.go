@@ -141,7 +141,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 	}
 
 	t.Run("sure win", func(t *testing.T) {
-		s := startState.deepCopy()
+		s := startState.deepCopy(0)
 
 		coup := Coup{
 			{Start: Coordinates{X: 1, Y: 1}, End: Coordinates{0, 0}, N: 11},
@@ -163,6 +163,8 @@ func TestSimulationAllyNeutral(t *testing.T) {
 						count: 9,
 					},
 				},
+				time: 1,
+				cumScore: 20,
 				height: 2,
 				width:  2,
 			},
@@ -170,7 +172,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 	})
 
 	t.Run("unsure win", func(t *testing.T) {
-		s := startState.deepCopy()
+		s := startState.deepCopy(0)
 
 		coup := Coup{
 			{Start: Coordinates{X: 1, Y: 1}, End: Coordinates{0, 0}, N: 8},
@@ -192,6 +194,8 @@ func TestSimulationAllyNeutral(t *testing.T) {
 						count: 12,
 					},
 				},
+				time: 1,
+				cumScore: 20,
 				height: 2,
 				width:  2,
 			},
@@ -210,6 +214,8 @@ func TestSimulationAllyNeutral(t *testing.T) {
 						count: 12,
 					},
 				},
+				time: 1,
+				cumScore: 20,
 				height: 2,
 				width:  2,
 			},
@@ -217,7 +223,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 	})
 
 	t.Run("minmax decision", func(t *testing.T) {
-		s := startState.deepCopy()
+		s := startState.deepCopy(0)
 		s.grid[Coordinates{X: 1, Y: 0}] = cell{
 			race:  Enemy,
 			count: 15,
@@ -225,7 +231,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 		coup, _ := minimax(s, testDepth)
 
 		// Probability 5/6 of winning if we attack the enemy directly
-		// only 3/4 if we get the villagers but the enemy atack us after
+		// only 3/4 if we get the villagers but the enemy attacks us after
 		assert.Equal(t, Coup{Move{
 			Start: Coordinates{X: 1, Y: 1},
 			N:     20,

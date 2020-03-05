@@ -145,15 +145,16 @@ func scoreState(s state, ourRace race) float64 {
 	// TODO: distance power alpha instead of distance power 1
 	const (
 		countCoeff         = 1
-		battleCoeff        = 0.
-		neutralBattleCoeff = 0.
+		battleCoeff        = 0.5
+		neutralBattleCoeff = 0.5
+		cumScoreCoeff = 0.001
 	)
 
 	// Win and lose cases
 	if counts[ourRace] == 0 {
-		return -1e64
+		return -1e10 + s.cumScore
 	} else if counts[ourRace.opponent()] == 0 {
-		return 1e64
+		return 1e10 + s.cumScore
 	}
 
 	for _, heuristic := range []struct {
@@ -175,5 +176,5 @@ func scoreState(s state, ourRace race) float64 {
 		total += score * heuristic.coeff
 	}
 
-	return total
+	return total + (s.cumScore*cumScoreCoeff)
 }

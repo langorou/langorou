@@ -50,7 +50,7 @@ func main() {
 	go server.StartServer(mapPath, useRand, rows, columns, humans, monster, time.Duration(timeoutS)*time.Second)
 
 	addr := "localhost:5555"
-	player1, err := client.NewTCPClient(addr, "langone", client.NewDumbIA())
+	player1, err := client.NewTCPClient(addr, "langone", client.NewMinMaxIA(7))
 	failIf(err, "")
 	player2, err := client.NewTCPClient(addr, "langtwo", client.NewMinMaxIA(5))
 	failIf(err, "")

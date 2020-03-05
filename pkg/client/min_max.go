@@ -48,7 +48,7 @@ func alphabeta(state state, race race, alpha float64, beta float64, depth uint8)
 			score += tmpScore * outcome.probability
 		}
 
-		// log.Printf("minimax score: %f at depth: %d for race: %v and coup: %+v, grid: %+v, potential: %+v", score, depth, race, coup, state.grid, outcomes)
+		// log.Printf("cumulative: %f, minimax score: %f at depth: %d for race: %v and coup: %+v, grid: %+v, potential: %+v", state.cumScore, score, depth, race, coup, state.grid, outcomes)
 
 		if f(value, score) == score { // score >= value if max playing or value >= score if min playing
 			value = score

@@ -15,7 +15,7 @@ func applyCoup(origState state, race race, coup Coup) []potentialState {
 	// TODO improve this function, it's not really efficient, some moves are
 
 	// Start with the current state with probability 1
-	states := []potentialState{{s: origState.deepCopy(), probability: 1}}
+	states := []potentialState{{s: origState.deepCopy(1), probability: 1}}
 
 	// Sort moves by target cell
 	sort.Sort(coup)
@@ -90,7 +90,7 @@ func applyMove(s state, race race, target Coordinates, count uint8) []potentialS
 
 	if !ok || endCell.isEmpty() || race == endCell.race {
 		// nobody on there, or same race as ours, no battle and we can just increase the count
-		newState := s.deepCopy()
+		newState := s.deepCopy(0)
 
 		// Update the cells
 		endCell.count += count
@@ -113,7 +113,7 @@ func applyMove(s state, race race, target Coordinates, count uint8) []potentialS
 	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
 	if P == 1 {
 		// We surely win, same as "nobody there"
-		newState := s.deepCopy()
+		newState := s.deepCopy(0)
 
 		endCell.count = count + (isNeutral * endCell.count) // if we totally win against Neutral, we convert all of them
 		endCell.race = race
@@ -123,7 +123,7 @@ func applyMove(s state, race race, target Coordinates, count uint8) []potentialS
 		return []potentialState{{s: newState, probability: 1}}
 	}
 
-	winState := s.deepCopy()
+	winState := s.deepCopy(0)
 
 	winState.grid[target] = cell{
 		// each ally has probability P to survive. Against neutral, we have a probability P to convert them
@@ -131,7 +131,7 @@ func applyMove(s state, race race, target Coordinates, count uint8) []potentialS
 		race:  race,
 	}
 
-	lossState := s.deepCopy()
+	lossState := s.deepCopy(0)
 
 	lossState.grid[target] = cell{
 		// each enemy has probability 1-P to survive

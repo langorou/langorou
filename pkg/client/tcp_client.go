@@ -221,7 +221,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 		log.Printf("%s: received %d changes", command, n)
 
 		if flip {
-			log.Printf("%s: we are werewolves", command)
+			log.Printf("%s: we are werewolves (%s)", command, c.game.playerName)
 			for i, c := range changes {
 				c.Ally, c.Enemy = c.Enemy, c.Ally
 				changes[i] = c
@@ -229,7 +229,7 @@ func (c *TCPClient) ReceiveMsg() (ServerCmd, error) {
 
 			c.isWerewolf = true
 		} else {
-			log.Printf("%s: we are vampires", command)
+			log.Printf("%s: we are vampires (%s)", command, c.game.playerName)
 		}
 
 		c.game.Map(changes)
