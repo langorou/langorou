@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"github.com/langorou/langorou/pkg/client/model"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -132,4 +133,23 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			End:   model.Coordinates{X: 1, Y: 0},
 		}}, coup)
 	})
+}
+
+func BenchmarkMinMax(b *testing.B) {
+	startState := model.NewState(10, 10)
+	startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 68)
+	startState.SetCell(model.Coordinates{X: 2, Y: 2}, model.Neutral, 7)
+	startState.SetCell(model.Coordinates{X: 2, Y: 7}, model.Neutral, 18)
+	startState.SetCell(model.Coordinates{X: 5, Y: 8}, model.Neutral, 18)
+	startState.SetCell(model.Coordinates{X: 6, Y: 2}, model.Ally, 68)
+	startState.SetCell(model.Coordinates{X: 7, Y: 4}, model.Enemy, 25)
+	startState.SetCell(model.Coordinates{X: 9, Y: 0}, model.Enemy, 53)
+
+	for _, depth := range []uint8{2, 3, 4, 5, 6} {
+		b.Run(fmt.Sprintf("depth%d", depth), func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				findBestCoup(startState.Copy(false), depth)
+			}
+		})
+	}
 }
