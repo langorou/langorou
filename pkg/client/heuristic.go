@@ -108,19 +108,32 @@ func scoreMonsterBattle(c1, c2 model.Coordinates, cell1, cell2 model.Cell) (floa
 	return s1 / distance, s2 / distance
 }
 
+type scoreCounter struct {
+	ally float64
+	enemy float64
+}
+
+func (sc *scoreCounter) add(race model.Race, score float64) {
+	if race == model.Ally {
+		sc.ally += score
+	} else {
+		sc.enemy += score
+	}
+}
+
 // scoreState is the heuristic for our IA
-func scoreState(s model.State, ourRace model.Race) float64 {
+func scoreState(s model.State) float64 {
 
 	// different counts participating in the heuristic
-	counts := map[model.Race]float64{model.Ally: 0, model.Enemy: 0}
-	battleCounts := map[model.Race]float64{model.Ally: 0, model.Enemy: 0}
-	neutralBattleCounts := map[model.Race]float64{model.Ally: 0, model.Enemy: 0}
+	counts := scoreCounter{}
+	battleCounts := scoreCounter{}
+	neutralBattleCounts := scoreCounter{}
 
 	for c1, cell1 := range s.Grid {
 		if cell1.Race == model.Neutral {
 			continue
 		}
-		counts[cell1.Race] += float64(cell1.Count)
+		counts.add(cell1.Race, float64(cell1.Count))
 
 		// Loop to compute stats on the possible battle
 		for c2, cell2 := range s.Grid {
@@ -130,12 +143,12 @@ func scoreState(s model.State, ourRace model.Race) float64 {
 
 			if cell2.Race == model.Neutral {
 				// TODO: average here since we can count a battle multiple times
-				neutralBattleCounts[cell1.Race] += scoreNeutralBattle(c1, c2, cell1, cell2)
+				neutralBattleCounts.add(cell1.Race, scoreNeutralBattle(c1, c2, cell1, cell2))
 			} else if cell2.Race == cell1.Race.Opponent() {
 				// TODO: average here since we can count a battle multiple times
 				g1, g2 := scoreMonsterBattle(c1, c2, cell1, cell2)
-				battleCounts[cell1.Race] += g1
-				battleCounts[cell2.Race] += g2
+				battleCounts.add(cell1.Race, g1)
+				battleCounts.add(cell2.Race, g2)
 			}
 		}
 	}
@@ -154,28 +167,21 @@ func scoreState(s model.State, ourRace model.Race) float64 {
 	cumScore := s.CumulativeScore
 
 	// Win and lose cases
-	if counts[ourRace] == 0 {
+	if counts.ally == 0 {
 		return -1e10 + cumScore
-	} else if counts[ourRace.Opponent()] == 0 {
+	} else if counts.enemy == 0 {
 		return 1e10 + cumScore
 	}
 
 	for _, heuristic := range []struct {
 		coeff  float64
-		scores map[model.Race]float64
+		scores scoreCounter
 	}{
 		{countCoeff, counts},
 		{battleCoeff, battleCounts},
 		{neutralBattleCoeff, neutralBattleCounts},
 	} {
-		score := 0.
-		for race, count := range heuristic.scores {
-			if race == ourRace {
-				score += count
-			} else if race.Opponent() == ourRace {
-				score -= count
-			}
-		}
+		score := heuristic.scores.ally - heuristic.scores.enemy
 		total += score * heuristic.coeff
 	}
 

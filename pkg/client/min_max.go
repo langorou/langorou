@@ -20,13 +20,13 @@ func alphabeta(state model.State, race model.Race, alpha float64, beta float64, 
 
 	// Max depth reached
 	if depth <= 0 {
-		return bestCoup, scoreState(state, model.Ally)
+		return bestCoup, scoreState(state)
 	}
 
 	coups := generateCoups(state, race)
 	// No moves found
 	if len(coups) == 0 {
-		return bestCoup, scoreState(state, model.Ally)
+		return bestCoup, scoreState(state)
 	}
 
 	// Chose if we want to maximize (us) or minimize (enemy) our score
