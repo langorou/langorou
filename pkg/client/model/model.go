@@ -1,5 +1,7 @@
 package model
 
+import "sort"
+
 // Coordinates represents coordinates on the grid
 type Coordinates struct {
 	X uint8
@@ -8,10 +10,10 @@ type Coordinates struct {
 
 func uint8Sub(a, b uint8) uint8 {
 	if a > b {
-		return a -b
+		return a - b
 	}
 
-	return b -a
+	return b - a
 }
 
 func uint8Max(a, b uint8) uint8 {
@@ -53,4 +55,50 @@ func (coup Coup) Less(i, j int) bool {
 
 func (coup Coup) Swap(i, j int) {
 	coup[i], coup[j] = coup[j], coup[i]
+}
+
+func SortCoupsByQuickScore(coups []Coup, s State) {
+	cbqs := coupByQuickScore{coups, s}
+	sort.Sort(cbqs)
+}
+
+// quickScore scores a move quickly (quicker than the heuristic) just to be able to sort coups by their score
+// and have a more effective minmax
+// It simply computes the count of the battles taking places:
+// No battle will return 0
+// Nice battles will be > 0
+// Bad battles will be < 0
+func (coup Coup) quickScore(state State) float64 {
+	battles := map[Coordinates]struct{}{}
+	score := 0.
+
+	for _, move := range coup {
+		end := state.Grid[move.End]
+		if !end.IsEmpty() && end.Race != Ally {
+			if _, ok := battles[move.End]; !ok {
+				score -= float64(end.Count)
+			}
+			score += float64(move.N)
+		}
+	}
+
+	return score
+}
+
+// coupByQuickScore is used to sort coups by quick score
+type coupByQuickScore struct {
+	c []Coup
+	s State
+}
+
+func (cb coupByQuickScore) Len() int {
+	return len(cb.c)
+}
+
+func (cb coupByQuickScore) Less(i, j int) bool {
+	return cb.c[i].quickScore(cb.s) > cb.c[j].quickScore(cb.s)
+}
+
+func (cb coupByQuickScore) Swap(i, j int) {
+	cb.c[i], cb.c[j] = cb.c[j], cb.c[i]
 }

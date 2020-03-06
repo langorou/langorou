@@ -109,7 +109,7 @@ func scoreMonsterBattle(c1, c2 model.Coordinates, cell1, cell2 model.Cell) (floa
 }
 
 type scoreCounter struct {
-	ally float64
+	ally  float64
 	enemy float64
 }
 

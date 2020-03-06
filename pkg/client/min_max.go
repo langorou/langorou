@@ -37,6 +37,9 @@ func alphabeta(state model.State, race model.Race, alpha float64, beta float64, 
 		f = math.Min
 	}
 
+	// Sort by killer moves
+	model.SortCoupsByQuickScore(coups, state)
+
 	// for each generated coup, we compute the list of potential outcomes and compute an average score
 	// weighted by the probabilities of these potential outcomes
 	for _, coup := range coups {
