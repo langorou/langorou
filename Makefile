@@ -7,7 +7,7 @@ GOCMD = GO111MODULE=on go
 # Build the project
 all: build
 
-bench_file=/tmp/profile.out
+profile=/tmp/profile.out
 bench_name=.
 
 .PHONY: build
@@ -25,8 +25,8 @@ test:
 
 .PHONY: benchmark
 benchmark:
-	${GOCMD} test -bench=${bench_name} -v -cpuprofile ${bench_file} ./pkg/client/
-	@echo "Benchmark saved at: ${bench_file}"
+	${GOCMD} test -bench=${bench_name} -v -cpuprofile ${profile} ./pkg/client/
+	@echo "Benchmark profile saved at: ${profile}"
 
 .PHONY: fmt
 fmt:
