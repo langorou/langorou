@@ -1,18 +1,28 @@
 package model
 
-import "math"
-
 // Coordinates represents coordinates on the grid
 type Coordinates struct {
 	X uint8
 	Y uint8
 }
 
-func (c1 *Coordinates) Distance(c2 Coordinates) float64 {
-	x1, y1 := float64(c1.X), float64(c1.Y)
-	x2, y2 := float64(c2.X), float64(c2.Y)
+func uint8Sub(a, b uint8) uint8 {
+	if a > b {
+		return a -b
+	}
 
-	return math.Max(math.Abs(x1-x2), math.Abs(y1-y2))
+	return b -a
+}
+
+func uint8Max(a, b uint8) uint8 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func (c1 *Coordinates) Distance(c2 Coordinates) float64 {
+	return float64(uint8Max(uint8Sub(c1.X, c2.X), uint8Sub(c1.Y, c2.Y)))
 }
 
 // Changes is an update of the board sent by the server

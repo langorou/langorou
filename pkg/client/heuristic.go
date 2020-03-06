@@ -114,9 +114,10 @@ type scoreCounter struct {
 }
 
 func (sc *scoreCounter) add(race model.Race, score float64) {
-	if race == model.Ally {
+	switch race {
+	case model.Ally:
 		sc.ally += score
-	} else {
+	case model.Enemy:
 		sc.enemy += score
 	}
 }

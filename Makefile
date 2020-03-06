@@ -8,6 +8,7 @@ GOCMD = GO111MODULE=on go
 all: build
 
 bench_file=/tmp/profile.out
+bench_name=.
 
 .PHONY: build
 build:
@@ -24,7 +25,7 @@ test:
 
 .PHONY: benchmark
 benchmark:
-	${GOCMD} test -bench=BenchmarkMinMax -v -cpuprofile ${bench_file} ./pkg/client/
+	${GOCMD} test -bench=${bench_name} -v -cpuprofile ${bench_file} ./pkg/client/
 	@echo "Benchmark saved at: ${bench_file}"
 
 .PHONY: fmt
