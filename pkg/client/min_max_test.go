@@ -140,9 +140,14 @@ func BenchmarkMinMax(b *testing.B) {
 	startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 68)
 	startState.SetCell(model.Coordinates{X: 2, Y: 2}, model.Neutral, 7)
 	startState.SetCell(model.Coordinates{X: 2, Y: 7}, model.Neutral, 18)
-	startState.SetCell(model.Coordinates{X: 5, Y: 8}, model.Neutral, 18)
+	startState.SetCell(model.Coordinates{X: 3, Y: 3}, model.Ally, 11)
+	startState.SetCell(model.Coordinates{X: 5, Y: 7}, model.Neutral, 3)
+	startState.SetCell(model.Coordinates{X: 5, Y: 8}, model.Neutral, 4)
+	startState.SetCell(model.Coordinates{X: 5, Y: 9}, model.Neutral, 18)
 	startState.SetCell(model.Coordinates{X: 6, Y: 2}, model.Ally, 68)
+	startState.SetCell(model.Coordinates{X: 6, Y: 8}, model.Ally, 6)
 	startState.SetCell(model.Coordinates{X: 7, Y: 4}, model.Enemy, 25)
+	startState.SetCell(model.Coordinates{X: 8, Y: 1}, model.Enemy, 2)
 	startState.SetCell(model.Coordinates{X: 9, Y: 0}, model.Enemy, 53)
 
 	for _, depth := range []uint8{2, 3, 4, 5, 6} {

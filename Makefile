@@ -26,7 +26,7 @@ test:
 
 .PHONY: benchmark
 benchmark:
-	${GOCMD} test -bench=${bench_name} -v -cpuprofile ${profile} -benchtime=${bench_time}./pkg/client/
+	${GOCMD} test -bench=${bench_name} -v -cpuprofile ${profile} -benchtime=${bench_time} ./pkg/client/
 	@echo "Benchmark profile saved at: ${profile}"
 
 .PHONY: fmt
