@@ -9,6 +9,7 @@ all: build
 
 profile=/tmp/profile.out
 bench_name=.
+bench_time=5s
 
 .PHONY: build
 build:
@@ -25,7 +26,7 @@ test:
 
 .PHONY: benchmark
 benchmark:
-	${GOCMD} test -bench=${bench_name} -v -cpuprofile ${profile} ./pkg/client/
+	${GOCMD} test -bench=${bench_name} -v -cpuprofile ${profile} -benchtime=${bench_time}./pkg/client/
 	@echo "Benchmark profile saved at: ${profile}"
 
 .PHONY: fmt
