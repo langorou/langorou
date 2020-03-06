@@ -12,7 +12,7 @@ func generateCoups(s model.State, race model.Race) []model.Coup {
 	coups := []model.Coup{}
 
 	for _, cc := range s.Grid {
-		if cc.Cell.Race == race {
+		if cc.Race == race {
 			moves := generateMovesFromCell(s, cc.Coords)
 			for _, move := range moves {
 				coups = append(coups, model.Coup{move})
@@ -80,36 +80,36 @@ func generateMovesFromCell(s model.State, source model.Coordinates) []model.Move
 }
 
 // scoreNeutralBattle scores the issue of a battle between a monster and a neutral group
-func scoreNeutralBattle(c1, c2 model.Coordinates, cell1, cell2 model.Cell) float64 {
-	proba := winProbability(cell1.Count, cell2.Count, true)
-	distance := c1.Distance(c2)
+func scoreNeutralBattle(cc1 model.CCell, cc2 model.CCell) float64 {
+	proba := winProbability(cc1.Count, cc2.Count, true)
+	distance := cc1.Coords.Distance(cc2.Coords)
 
 	// probable gain of population
 	probableGain := math.Max(
 		0,
-		proba*float64(cell1.Count+cell2.Count)-float64(cell1.Count),
+		proba*float64(cc1.Count+cc2.Count)-float64(cc1.Count),
 	)
 
 	return probableGain / distance
 }
 
 // scoreMonsterBattle scores the issue of a battle between monsters
-func scoreMonsterBattle(c1, c2 model.Coordinates, cell1, cell2 model.Cell) (float64, float64) {
-	distance := c1.Distance(c2)
+func scoreMonsterBattle(cc1 model.CCell, cc2 model.CCell) (float64, float64) {
+	distance := cc1.Coords.Distance(cc2.Coords)
 
 	// p1 is for 1 attacks 2
-	p1 := winProbability(cell1.Count, cell2.Count, false)
+	p1 := winProbability(cc1.Count, cc2.Count, false)
 	// p2 is for 2 attacks 1
-	p2 := winProbability(cell2.Count, cell1.Count, false)
+	p2 := winProbability(cc2.Count, cc1.Count, false)
 
-	s1 := p1*float64(cell1.Count+cell2.Count) - float64(cell2.Count)
-	s2 := p2*float64(cell2.Count+cell1.Count) - float64(cell1.Count)
+	s1 := p1*float64(cc1.Count+cc2.Count) - float64(cc2.Count)
+	s2 := p2*float64(cc2.Count+cc1.Count) - float64(cc1.Count)
 
 	return s1 / distance, s2 / distance
 }
 
 type scoreCounter struct {
-	ally float64
+	ally  float64
 	enemy float64
 }
 
@@ -130,25 +130,25 @@ func scoreState(s model.State) float64 {
 	neutralBattleCounts := scoreCounter{}
 
 	for _, cc1 := range s.Grid {
-		if cc1.Cell.Race == model.Neutral {
+		if cc1.Race == model.Neutral {
 			continue
 		}
-		counts.add(cc1.Cell.Race, float64(cc1.Cell.Count))
+		counts.add(cc1.Race, float64(cc1.Count))
 
 		// Loop to compute stats on the possible battle
 		for _, cc2 := range s.Grid {
-			if cc1.Coords == cc2.Coords || cc1.Cell.Race == cc2.Cell.Race {
+			if cc1.Coords == cc2.Coords || cc1.Race == cc2.Race {
 				continue
 			}
 
-			if cc2.Cell.Race == model.Neutral {
+			if cc2.Race == model.Neutral {
 				// TODO: average here since we can count a battle multiple times
-				neutralBattleCounts.add(cc1.Cell.Race, scoreNeutralBattle(cc1.Coords, cc2.Coords, cc1.Cell, cc2.Cell))
-			} else if cc2.Cell.Race == cc1.Cell.Race.Opponent() {
+				neutralBattleCounts.add(cc1.Race, scoreNeutralBattle(cc1, cc2))
+			} else if cc2.Race == cc1.Race.Opponent() {
 				// TODO: average here since we can count a battle multiple times
-				g1, g2 := scoreMonsterBattle(cc1.Coords, cc2.Coords, cc1.Cell, cc2.Cell)
-				battleCounts.add(cc1.Cell.Race, g1)
-				battleCounts.add(cc2.Cell.Race, g2)
+				g1, g2 := scoreMonsterBattle(cc1, cc2)
+				battleCounts.add(cc1.Race, g1)
+				battleCounts.add(cc2.Race, g2)
 			}
 		}
 	}

@@ -52,7 +52,7 @@ func (g *Game) Upd(changes []model.Changes) {
 			g.state.SetCell(change.Coords, model.Enemy, change.Enemy)
 		} else if change.Neutral == 0 && change.Ally == 0 && change.Enemy == 0 {
 			// Empty Cell
-			g.state.EmptyCell(change.Coords)
+			g.state.SetCell(change.Coords, model.Neutral, 0)
 		} else {
 			// Should not happen !
 			panic(fmt.Sprintf("impossible change, maximum one race per cell: %+v", change))

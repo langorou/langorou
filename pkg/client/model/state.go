@@ -30,9 +30,10 @@ type Cell struct {
 	Race  Race
 }
 
+// A Cell with coordinates
 type CCell struct {
 	Coords Coordinates
-	Cell   Cell
+	Cell
 }
 
 func (c *Cell) IsEmpty() bool {
@@ -72,7 +73,7 @@ func (s State) Copy(advanceTime bool) State {
 	return State{Grid: newGrid, Height: s.Height, Width: s.Width, CumulativeScore: score, time: time}
 }
 
-func (s *State) Idx(pos Coordinates) int {
+func (s *State) cellIndex(pos Coordinates) int {
 	for i, cc := range s.Grid {
 		if cc.Coords == pos {
 			return i
@@ -83,7 +84,7 @@ func (s *State) Idx(pos Coordinates) int {
 }
 
 func (s *State) GetCell(pos Coordinates) Cell {
-	idx := s.Idx(pos)
+	idx := s.cellIndex(pos)
 	if idx < 0 {
 		return Cell{}
 	}
@@ -92,43 +93,38 @@ func (s *State) GetCell(pos Coordinates) Cell {
 }
 
 func (s *State) SetCell(pos Coordinates, race Race, count uint8) {
-	// If we set a cell to 0, remove it except if it's neutral (because the HUM message from the server does this)
-	if count == 0 && race != Neutral {
-		s.EmptyCell(pos)
-	}
-
-	idx := s.Idx(pos)
 	cc := CCell{pos, Cell{Race: race, Count: count}}
-	if idx < 0 {
+
+	idx := s.cellIndex(pos)
+	if idx < 0 && count == 0 {
+		return
+	} else if idx < 0 {
 		s.Grid = append(s.Grid, cc)
 	} else {
-		s.Grid[idx] =cc
+		s.Grid[idx] = cc
 	}
 }
 
 func (s *State) IncreaseCell(pos Coordinates, count uint8) {
-	idx := s.Idx(pos)
+	idx := s.cellIndex(pos)
 	if idx < 0 {
 		panic(fmt.Sprintf("Tried to increase population at non existing cell: %+v", pos))
 	}
-	s.Grid[idx].Cell.Count += count
+	s.Grid[idx].Count += count
 }
 
 func (s *State) DecreaseCell(pos Coordinates, count uint8) {
-	idx := s.Idx(pos)
+	idx := s.cellIndex(pos)
 	if idx < 0 {
 		panic(fmt.Sprintf("Tried to decrease population at non existing cell: %+v", pos))
 	}
-	c:= s.Grid[idx]
+	c := s.Grid[idx]
 
-	if c.Cell.Count < count {
-		panic(fmt.Sprintf("Invalid move ! From pos: %+v, race: %v, current count: %d, move count: %d", pos, c.Cell.Race, c.Cell.Count, count))
+	if c.Count < count {
+		panic(fmt.Sprintf("Invalid move ! From pos: %+v, race: %v, current count: %d, move count: %d", pos, c.Race, c.Count, count))
 	}
 
-	s.Grid[idx].Cell.Count -= count
-}
-
-func (s *State) EmptyCell(pos Coordinates) {
+	s.Grid[idx].Count -= count
 }
 
 func (s State) allies() float64 {
@@ -136,8 +132,8 @@ func (s State) allies() float64 {
 	count := uint8(0)
 
 	for _, c := range s.Grid {
-		if c.Cell.Race == Ally {
-			count += c.Cell.Count
+		if c.Race == Ally {
+			count += c.Count
 		}
 	}
 

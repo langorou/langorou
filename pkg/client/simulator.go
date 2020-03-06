@@ -36,9 +36,10 @@ func applyCoup(origState model.State, race model.Race, coup model.Coup) []potent
 		// If the target cell is no more the same, stop aggregating and compute the possible states
 		if move.End != lastEndCoordinates {
 
+			startCell := origState.GetCell(move.Start)
 			// Ensure that the move is legal
-			if origState.Grid[origState.Idx(move.Start)].Cell.Race != race {
-				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, origState.Grid[origState.Idx(move.Start)].Cell.Race))
+			if startCell.Race != race {
+				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, startCell.Race))
 			}
 
 			states = applyMoveOnPossibleStates(states, race, lastEndCoordinates, count)
