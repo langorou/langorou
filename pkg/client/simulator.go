@@ -75,17 +75,17 @@ func applyMoveOnPossibleStates(states []potentialState, race model.Race, target 
 }
 
 // applyMove computes the possible next states from a given state and ONLY ONE move
+// XXX: WARNING it re-uses the given state, so it will become stale after
 func applyMove(s model.State, race model.Race, target model.Coordinates, count uint8) []potentialState {
 
 	endCell := s.Grid[target]
 
 	if endCell.IsEmpty() || race == endCell.Race {
 		// nobody on there, or same race as ours, no battle and we can just increase the count
-		newState := s.Copy(false)
 
 		// Update the cells
-		newState.SetCell(target, race, endCell.Count+count)
-		return []potentialState{{s: newState, probability: 1}}
+		s.SetCell(target, race, endCell.Count+count)
+		return []potentialState{{s: s, probability: 1}}
 	}
 
 	// Fight with the enemy or neutral
@@ -100,13 +100,11 @@ func applyMove(s model.State, race model.Race, target model.Coordinates, count u
 	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
 	if P == 1 {
 		// We surely win, same as "nobody there"
-		newState := s.Copy(false)
-		newState.SetCell(target, race, count+(isNeutral*endCell.Count)) // if we totally win against Neutral, we convert all of them
-
-		return []potentialState{{s: newState, probability: 1}}
+		s.SetCell(target, race, count+(isNeutral*endCell.Count)) // if we totally win against Neutral, we convert all of them
+		return []potentialState{{s: s, probability: 1}}
 	}
 
-	winState := s.Copy(false)
+	winState := s
 
 	winState.SetCell(
 		target,
