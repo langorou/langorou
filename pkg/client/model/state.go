@@ -30,6 +30,11 @@ type Cell struct {
 	Race  Race
 }
 
+type CCell struct {
+	Coords Coordinates
+	Cell   Cell
+}
+
 func (c *Cell) IsEmpty() bool {
 	return c.Count == 0
 }
@@ -37,7 +42,7 @@ func (c *Cell) IsEmpty() bool {
 // State represents a game state, disclaimer we should NOT modify Grid directly, use SetCell, IncreaseCell and DecreaseCell
 // methods instead, Grid is only available to ease it's reading process
 type State struct {
-	Grid            map[Coordinates]Cell
+	Grid            []CCell
 	Height          uint8
 	Width           uint8
 	time            uint8
@@ -46,7 +51,7 @@ type State struct {
 
 func NewState(height uint8, width uint8) State {
 	return State{
-		Grid:            map[Coordinates]Cell{},
+		Grid:            []CCell{},
 		Height:          height,
 		Width:           width,
 		time:            0,
@@ -56,10 +61,8 @@ func NewState(height uint8, width uint8) State {
 
 // Copy copies a state, incrementing the cumulative score and the time
 func (s State) Copy(advanceTime bool) State {
-	newGrid := make(map[Coordinates]Cell, len(s.Grid))
-	for k, v := range s.Grid {
-		newGrid[k] = v
-	}
+	newGrid := make([]CCell, len(s.Grid))
+	copy(newGrid, s.Grid)
 	score := s.CumulativeScore
 	time := s.time
 	if advanceTime {
@@ -69,43 +72,63 @@ func (s State) Copy(advanceTime bool) State {
 	return State{Grid: newGrid, Height: s.Height, Width: s.Width, CumulativeScore: score, time: time}
 }
 
+func (s *State) Idx(pos Coordinates) int {
+	for i, cc := range s.Grid {
+		if cc.Coords == pos {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func (s *State) GetCell(pos Coordinates) Cell {
+	idx := s.Idx(pos)
+	if idx < 0 {
+		return Cell{}
+	}
+
+	return s.Grid[idx].Cell
+}
+
 func (s *State) SetCell(pos Coordinates, race Race, count uint8) {
 	// If we set a cell to 0, remove it except if it's neutral (because the HUM message from the server does this)
 	if count == 0 && race != Neutral {
 		s.EmptyCell(pos)
 	}
-	s.Grid[pos] = Cell{Race: race, Count: count}
+
+	idx := s.Idx(pos)
+	cc := CCell{pos, Cell{Race: race, Count: count}}
+	if idx < 0 {
+		s.Grid = append(s.Grid, cc)
+	} else {
+		s.Grid[idx] =cc
+	}
 }
 
 func (s *State) IncreaseCell(pos Coordinates, count uint8) {
-	c, ok := s.Grid[pos]
-	if !ok {
+	idx := s.Idx(pos)
+	if idx < 0 {
 		panic(fmt.Sprintf("Tried to increase population at non existing cell: %+v", pos))
 	}
-	c.Count += count
-	s.Grid[pos] = c
+	s.Grid[idx].Cell.Count += count
 }
 
 func (s *State) DecreaseCell(pos Coordinates, count uint8) {
-	c, ok := s.Grid[pos]
-	if !ok {
+	idx := s.Idx(pos)
+	if idx < 0 {
 		panic(fmt.Sprintf("Tried to decrease population at non existing cell: %+v", pos))
 	}
+	c:= s.Grid[idx]
 
-	if c.Count == count {
-		// If cell is going to be empty, let's remove it
-		s.EmptyCell(pos)
-		return
-	} else if c.Count < count {
-		panic(fmt.Sprintf("Invalid move ! From pos: %+v, race: %v, current count: %d, move count: %d", pos, c.Race, c.Count, count))
+	if c.Cell.Count < count {
+		panic(fmt.Sprintf("Invalid move ! From pos: %+v, race: %v, current count: %d, move count: %d", pos, c.Cell.Race, c.Cell.Count, count))
 	}
 
-	c.Count -= count
-	s.Grid[pos] = c
+	s.Grid[idx].Cell.Count -= count
 }
 
 func (s *State) EmptyCell(pos Coordinates) {
-	delete(s.Grid, pos)
 }
 
 func (s State) allies() float64 {
@@ -113,8 +136,8 @@ func (s State) allies() float64 {
 	count := uint8(0)
 
 	for _, c := range s.Grid {
-		if c.Race == Ally {
-			count += c.Count
+		if c.Cell.Race == Ally {
+			count += c.Cell.Count
 		}
 	}
 

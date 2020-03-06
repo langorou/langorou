@@ -11,9 +11,9 @@ import (
 func generateCoups(s model.State, race model.Race) []model.Coup {
 	coups := []model.Coup{}
 
-	for coord, cell := range s.Grid {
-		if cell.Race == race {
-			moves := generateMovesFromCell(s, coord)
+	for _, cc := range s.Grid {
+		if cc.Cell.Race == race {
+			moves := generateMovesFromCell(s, cc.Coords)
 			for _, move := range moves {
 				coups = append(coups, model.Coup{move})
 			}
@@ -74,7 +74,7 @@ func generateMovesFromCell(s model.State, source model.Coordinates) []model.Move
 		if !ok {
 			continue
 		}
-		moves = append(moves, model.Move{Start: source, N: s.Grid[source].Count, End: target})
+		moves = append(moves, model.Move{Start: source, N: s.GetCell(source).Count, End: target})
 	}
 	return moves
 }
@@ -129,26 +129,26 @@ func scoreState(s model.State) float64 {
 	battleCounts := scoreCounter{}
 	neutralBattleCounts := scoreCounter{}
 
-	for c1, cell1 := range s.Grid {
-		if cell1.Race == model.Neutral {
+	for _, cc1 := range s.Grid {
+		if cc1.Cell.Race == model.Neutral {
 			continue
 		}
-		counts.add(cell1.Race, float64(cell1.Count))
+		counts.add(cc1.Cell.Race, float64(cc1.Cell.Count))
 
 		// Loop to compute stats on the possible battle
-		for c2, cell2 := range s.Grid {
-			if c1 == c2 || cell1.Race == cell2.Race {
+		for _, cc2 := range s.Grid {
+			if cc1.Coords == cc2.Coords || cc1.Cell.Race == cc2.Cell.Race {
 				continue
 			}
 
-			if cell2.Race == model.Neutral {
+			if cc2.Cell.Race == model.Neutral {
 				// TODO: average here since we can count a battle multiple times
-				neutralBattleCounts.add(cell1.Race, scoreNeutralBattle(c1, c2, cell1, cell2))
-			} else if cell2.Race == cell1.Race.Opponent() {
+				neutralBattleCounts.add(cc1.Cell.Race, scoreNeutralBattle(cc1.Coords, cc2.Coords, cc1.Cell, cc2.Cell))
+			} else if cc2.Cell.Race == cc1.Cell.Race.Opponent() {
 				// TODO: average here since we can count a battle multiple times
-				g1, g2 := scoreMonsterBattle(c1, c2, cell1, cell2)
-				battleCounts.add(cell1.Race, g1)
-				battleCounts.add(cell2.Race, g2)
+				g1, g2 := scoreMonsterBattle(cc1.Coords, cc2.Coords, cc1.Cell, cc2.Cell)
+				battleCounts.add(cc1.Cell.Race, g1)
+				battleCounts.add(cc2.Cell.Race, g2)
 			}
 		}
 	}

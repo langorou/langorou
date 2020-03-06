@@ -37,8 +37,8 @@ func applyCoup(origState model.State, race model.Race, coup model.Coup) []potent
 		if move.End != lastEndCoordinates {
 
 			// Ensure that the move is legal
-			if origState.Grid[move.Start].Race != race {
-				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, origState.Grid[move.Start].Race))
+			if origState.Grid[origState.Idx(move.Start)].Cell.Race != race {
+				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, origState.Grid[origState.Idx(move.Start)].Cell.Race))
 			}
 
 			states = applyMoveOnPossibleStates(states, race, lastEndCoordinates, count)
@@ -77,7 +77,7 @@ func applyMoveOnPossibleStates(states []potentialState, race model.Race, target 
 // applyMove computes the possible next states from a given state and ONLY ONE move
 func applyMove(s model.State, race model.Race, target model.Coordinates, count uint8) []potentialState {
 
-	endCell := s.Grid[target]
+	endCell := s.GetCell(target)
 
 	if endCell.IsEmpty() || race == endCell.Race {
 		// nobody on there, or same race as ours, no battle and we can just increase the count
