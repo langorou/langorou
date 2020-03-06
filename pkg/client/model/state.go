@@ -42,6 +42,7 @@ type State struct {
 	Width           uint8
 	time            uint8
 	CumulativeScore float64
+	Diffs map[Coordinates]Cell
 }
 
 func NewState(height uint8, width uint8) State {
@@ -51,14 +52,15 @@ func NewState(height uint8, width uint8) State {
 		Width:           width,
 		time:            0,
 		CumulativeScore: 0,
+		Diffs: map[Coordinates]Cell{},
 	}
 }
 
 // Copy copies a state, incrementing the cumulative score and the time
 func (s State) Copy(advanceTime bool) State {
-	newGrid := make(map[Coordinates]Cell, len(s.Grid))
-	for k, v := range s.Grid {
-		newGrid[k] = v
+	newDiffs := make(map[Coordinates]Cell, len(s.Diffs))
+	for k, v := range s.Diffs {
+		newDiffs[k] = v
 	}
 	score := s.CumulativeScore
 	time := s.time
@@ -66,7 +68,7 @@ func (s State) Copy(advanceTime bool) State {
 		score += (1 - float64(s.time)/1000) * s.allies()
 		time += 1
 	}
-	return State{Grid: newGrid, Height: s.Height, Width: s.Width, CumulativeScore: score, time: time}
+	return State{Grid: s.Grid, Height: s.Height, Width: s.Width, CumulativeScore: score, time: time, Diffs: newDiffs}
 }
 
 func (s *State) SetCell(pos Coordinates, race Race, count uint8) {
@@ -77,31 +79,32 @@ func (s *State) SetCell(pos Coordinates, race Race, count uint8) {
 	s.Grid[pos] = Cell{Race: race, Count: count}
 }
 
-func (s *State) IncreaseCell(pos Coordinates, count uint8) {
-	c, ok := s.Grid[pos]
-	if !ok {
-		panic(fmt.Sprintf("Tried to increase population at non existing cell: %+v", pos))
+func (s *State) GetCellWithDiff(pos Coordinates) (Cell, bool) {
+	c, ok := s.Diffs[pos]
+	if ok {
+		return c, true
 	}
-	c.Count += count
-	s.Grid[pos] = c
+
+	c, ok = s.Grid[pos]
+	return c, ok
 }
 
-func (s *State) DecreaseCell(pos Coordinates, count uint8) {
-	c, ok := s.Grid[pos]
+func (s *State) DiffSetCell(pos Coordinates, race Race, count uint8) {
+	s.Diffs[pos] = Cell{Race: race, Count: count}
+}
+
+
+func (s *State) DiffDecreaseCell(pos Coordinates, count uint8) {
+	c, ok := s.GetCellWithDiff(pos)
 	if !ok {
 		panic(fmt.Sprintf("Tried to decrease population at non existing cell: %+v", pos))
 	}
 
-	if c.Count == count {
-		// If cell is going to be empty, let's remove it
-		s.EmptyCell(pos)
-		return
-	} else if c.Count < count {
+	if c.Count < count {
 		panic(fmt.Sprintf("Invalid move ! From pos: %+v, race: %v, current count: %d, move count: %d", pos, c.Race, c.Count, count))
 	}
 
-	c.Count -= count
-	s.Grid[pos] = c
+	s.Diffs[pos] = Cell{Race:c.Race, Count:c.Count -count}
 }
 
 func (s *State) EmptyCell(pos Coordinates) {

@@ -11,7 +11,7 @@ const (
 )
 
 func findBestCoup(state model.State, depth uint8) (model.Coup, float64) {
-	return alphabeta(state, model.Ally, negInfinity, posInfinity, depth)
+	return alphabeta(state.Copy(false), model.Ally, negInfinity, posInfinity, depth)
 }
 
 // alphabeta computes the best coup going at most at depth depth

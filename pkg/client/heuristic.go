@@ -12,6 +12,9 @@ func generateCoups(s model.State, race model.Race) []model.Coup {
 	coups := []model.Coup{}
 
 	for coord, cell := range s.Grid {
+		if diff, ok := s.Diffs[coord]; ok {
+			cell = diff
+		}
 		if cell.Race == race {
 			moves := generateMovesFromCell(s, coord)
 			for _, move := range moves {
@@ -74,7 +77,8 @@ func generateMovesFromCell(s model.State, source model.Coordinates) []model.Move
 		if !ok {
 			continue
 		}
-		moves = append(moves, model.Move{Start: source, N: s.Grid[source].Count, End: target})
+		src, _ := s.GetCellWithDiff(source)
+		moves = append(moves, model.Move{Start: source, N: src.Count, End: target})
 	}
 	return moves
 }
@@ -131,6 +135,9 @@ func scoreState(s model.State) float64 {
 	neutralBattleCounts := scoreCounter{}
 
 	for c1, cell1 := range s.Grid {
+		if diff1, ok := s.Diffs[c1]; ok {
+			cell1 = diff1
+		}
 		if cell1.Race == model.Neutral {
 			continue
 		}
@@ -138,6 +145,10 @@ func scoreState(s model.State) float64 {
 
 		// Loop to compute stats on the possible battle
 		for c2, cell2 := range s.Grid {
+			if diff2, ok := s.Diffs[c2]; ok {
+				cell2 = diff2
+			}
+
 			if c1 == c2 || cell1.Race == cell2.Race {
 				continue
 			}

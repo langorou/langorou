@@ -73,8 +73,8 @@ func (coup Coup) quickScore(state State) float64 {
 	score := 0.
 
 	for _, move := range coup {
-		end := state.Grid[move.End]
-		if !end.IsEmpty() && end.Race != Ally {
+		end, ok := state.GetCellWithDiff(move.End)
+		if ok && !end.IsEmpty() && end.Race != Ally {
 			if _, ok := battles[move.End]; !ok {
 				score -= float64(end.Count)
 			}

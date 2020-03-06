@@ -30,15 +30,16 @@ func applyCoup(origState model.State, race model.Race, coup model.Coup) []potent
 
 		// Move the start populations on each possible states
 		for _, state := range states {
-			state.s.DecreaseCell(move.Start, move.N)
+			state.s.DiffDecreaseCell(move.Start, move.N)
 		}
 
 		// If the target cell is no more the same, stop aggregating and compute the possible states
 		if move.End != lastEndCoordinates {
 
+			startCell, _ := origState.GetCellWithDiff(move.Start)
 			// Ensure that the move is legal
-			if origState.Grid[move.Start].Race != race {
-				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, origState.Grid[move.Start].Race))
+			if startCell.Race != race {
+				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, startCell.Race))
 			}
 
 			states = applyMoveOnPossibleStates(states, race, lastEndCoordinates, count)
@@ -78,13 +79,13 @@ func applyMoveOnPossibleStates(states []potentialState, race model.Race, target 
 // XXX: WARNING it re-uses the given state, so it will become stale after
 func applyMove(s model.State, race model.Race, target model.Coordinates, count uint8) []potentialState {
 
-	endCell := s.Grid[target]
+	endCell, _ := s.GetCellWithDiff(target)
 
 	if endCell.IsEmpty() || race == endCell.Race {
 		// nobody on there, or same race as ours, no battle and we can just increase the count
 
 		// Update the cells
-		s.SetCell(target, race, endCell.Count+count)
+		s.DiffSetCell(target, race, endCell.Count+count)
 		return []potentialState{{s: s, probability: 1}}
 	}
 
@@ -100,13 +101,13 @@ func applyMove(s model.State, race model.Race, target model.Coordinates, count u
 	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
 	if P == 1 {
 		// We surely win, same as "nobody there"
-		s.SetCell(target, race, count+(isNeutral*endCell.Count)) // if we totally win against Neutral, we convert all of them
+		s.DiffSetCell(target, race, count+(isNeutral*endCell.Count)) // if we totally win against Neutral, we convert all of them
 		return []potentialState{{s: s, probability: 1}}
 	}
 
 	winState := s
 
-	winState.SetCell(
+	winState.DiffSetCell(
 		target,
 		race,
 		// each ally has probability P to survive. Against neutral, we have a probability P to convert them
@@ -114,7 +115,7 @@ func applyMove(s model.State, race model.Race, target model.Coordinates, count u
 	)
 
 	lossState := s.Copy(false)
-	lossState.SetCell(
+	lossState.DiffSetCell(
 		target,
 		endCell.Race,
 		// each enemy has probability 1-P to survive
