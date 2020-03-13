@@ -1,14 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
+
+	"github.com/langorou/langorou/pkg/utils"
 
 	_ "net/http/pprof"
 
@@ -23,7 +27,7 @@ func failIf(err error, msg string) {
 }
 
 const (
-	nRandMaps       = 5 // number of random maps to generate
+	nRandMaps       = 1 // number of random maps to generate
 	mapSizeMin      = 5
 	mapSizeMax      = 40
 	nHumanGroupsMin = 2
@@ -64,7 +68,7 @@ type mapParams struct {
 }
 
 func (m *mapParams) String() string {
-	return fmt.Sprintf("(%2dx%2d) - %2dhums - %2dmonst", m.rows, m.columns, m.humans, m.monsters)
+	return fmt.Sprintf("%dx%d_h%d_m%d", m.rows, m.columns, m.humans, m.monsters)
 }
 
 func newRandomMap() mapParams {
@@ -89,55 +93,131 @@ func init() {
 
 type aiPlayer client.IA
 
-type matchResult struct {
-	mapName           string
-	winner, looser    aiPlayer
-	isTie             bool
-	winEff, looserEff int
-	endTurn           int
+type matchResult int
+
+const (
+	tie matchResult = iota
+	player1Won
+	player2Won
+)
+
+type matchSummary struct {
+	MapName                string
+	Player1                aiPlayer
+	Player2                aiPlayer
+	Winner                 matchResult
+	Player1Eff, Player2Eff int
+	EndTurn                int
+	History                []server.Packed
 }
 
-func (mr *matchResult) String() string {
-	return fmt.Sprintf(
-		"%-15s VS %-15s | %3d - %3d | %3d turns | %s",
-		mr.winner.Name(), mr.looser.Name(), mr.winEff, mr.looserEff, mr.endTurn, mr.mapName,
-	)
-}
-
-type tournamentResult []matchResult
-
-func (tr tournamentResult) printMatchResults() {
-	for _, mr := range tr {
-		log.Print(mr.String())
+func (mr *matchSummary) String() string {
+	// First player is always werewolves, second Vampire
+	switch mr.Winner {
+	case tie:
+		return fmt.Sprintf(
+			"%-15s (P1) VS (P2) %-15s | %3d - %3d | %3d turns | %s",
+			mr.Player1.Name(), mr.Player2.Name(), mr.Player1Eff, mr.Player2Eff, mr.EndTurn, mr.MapName,
+		)
+	case player1Won:
+		return fmt.Sprintf(
+			"%-15s (P1) VS (P2) %-15s | %3d - %3d | %3d turns | %s",
+			mr.Player1.Name(), mr.Player2.Name(), mr.Player1Eff, mr.Player2Eff, mr.EndTurn, mr.MapName,
+		)
+	case player2Won:
+		return fmt.Sprintf(
+			"%-15s (P2) VS (P1) %-15s | %3d - %3d | %3d turns | %s",
+			mr.Player2.Name(), mr.Player1.Name(), mr.Player2Eff, mr.Player1Eff, mr.EndTurn, mr.MapName,
+		)
 	}
+
+	return fmt.Sprintf("error: invalid winner code %d", mr.Winner)
 }
 
-func (tr tournamentResult) printLeaderboard() {
+func (mr *matchSummary) shortName() string {
+	// First player is always werewolves, second Vampire
+	return fmt.Sprintf("%s_VS_%sON%s", mr.Player1.Name(), mr.Player2.Name(), mr.MapName)
+
+}
+
+func (mr *matchSummary) saveJSON(path string) {
+	f, err := os.Create(path)
+	failIf(err, "")
+	defer f.Close()
+
+	enc := json.NewEncoder(f)
+	err = enc.Encode(mr)
+	failIf(err, "")
+}
+
+type tournamentResult []matchSummary
+
+func (tr tournamentResult) matchResults() string {
+	var output string
+	for _, mr := range tr {
+		output += mr.String()
+		output += "\n"
+	}
+	return output
+}
+
+func (tr tournamentResult) leaderboard() string {
 	// gagnant 3 points
 	// perdant 0 points
 	// égalité 1 point chacun
 	leaderboard := make(map[string]int)
 
 	for _, mr := range tr {
-		if _, ok := leaderboard[mr.looser.Name()]; !ok {
-			leaderboard[mr.looser.Name()] = 0 // We might never add points to the looser
+		switch mr.Winner {
+		case tie:
+			leaderboard[mr.Player1.Name()]++
+			leaderboard[mr.Player2.Name()]++
+		case player1Won:
+			leaderboard[mr.Player1.Name()] += 3
+			if _, ok := leaderboard[mr.Player2.Name()]; !ok {
+				leaderboard[mr.Player2.Name()] = 0 // We might never add points to the looser
+			}
+		case player2Won:
+			leaderboard[mr.Player2.Name()] += 3
+			if _, ok := leaderboard[mr.Player1.Name()]; !ok {
+				leaderboard[mr.Player1.Name()] = 0 // We might never add points to the looser
+			}
 		}
 
-		if mr.isTie {
-			leaderboard[mr.winner.Name()]++
-			leaderboard[mr.looser.Name()]++
-		} else {
-			leaderboard[mr.winner.Name()] += 3
-		}
 	}
 
+	var output string
 	for name, score := range leaderboard {
 		// we'll not be sorted (random map)
-		log.Printf("%15s - %3d points", name, score)
+		output += fmt.Sprintf("%15s - %3d points\n", name, score)
+	}
+
+	return output
+}
+
+func (tr tournamentResult) save(path string) {
+	t := strconv.FormatInt(time.Now().Unix(), 10)
+
+	f, err := os.Create(filepath.Join(path, fmt.Sprintf("%s_tournament.txt", t)))
+	failIf(err, "")
+
+	content := fmt.Sprintf("Leaderboard\n%s\n----------\n%s", tr.leaderboard(), tr.matchResults())
+
+	_, err = f.WriteString(content)
+	failIf(err, "")
+	f.Sync()
+	f.Close()
+
+	dirPath := filepath.Join(path, fmt.Sprintf("%s_matches", t))
+	failIf(utils.CreateDirIfNotExist(dirPath), "")
+
+	for _, mr := range tr {
+		filename := fmt.Sprintf("%s.json", mr.shortName())
+		mr.saveJSON(filepath.Join(dirPath, filename))
 	}
 }
 
-func playMap(mapPath string, isRand bool, randMapParams mapParams, p1, p2 aiPlayer, matchResultCh chan matchResult, wg *sync.WaitGroup) {
+func playMap(mapPath string, isRand bool, randMapParams mapParams, p1, p2 aiPlayer, matchSummaryCh chan matchSummary, wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
@@ -172,49 +252,40 @@ func playMap(mapPath string, isRand bool, randMapParams mapParams, p1, p2 aiPlay
 	failIf(err, "")
 	failIf(player2.Init(), "fail to init player 2")
 
-	// TODO get match result
 	go player1.Play()
 	player2.Play()
 
 	outcome := <-gameOutcomeCh
 
-	matchRes := matchResult{
-		endTurn: outcome.Turn,
+	matchRes := matchSummary{
+		EndTurn:    outcome.Turn,
+		History:    outcome.History,
+		Player1:    p1,
+		Player2:    p2,
+		Player1Eff: outcome.P1Eff,
+		Player2Eff: outcome.P2Eff,
 	}
 
 	if isRand {
-		matchRes.mapName = randMapParams.String()
+		matchRes.MapName = randMapParams.String()
 	} else {
-		matchRes.mapName = mapPath
+		matchRes.MapName = mapPath
 	}
 
 	switch {
 	case outcome.P1Eff > outcome.P2Eff:
-		matchRes.winner = p1
-		matchRes.looser = p2
-		matchRes.winEff = outcome.P1Eff
-		matchRes.looserEff = outcome.P2Eff
+		matchRes.Winner = player1Won
 	case outcome.P1Eff < outcome.P2Eff:
-		matchRes.winner = p2
-		matchRes.looser = p1
-		matchRes.winEff = outcome.P2Eff
-		matchRes.looserEff = outcome.P1Eff
-
+		matchRes.Winner = player2Won
 	case outcome.P1Eff == outcome.P2Eff:
-		matchRes.winner = p2
-		matchRes.looser = p1
-		matchRes.winEff = outcome.P2Eff
-		matchRes.looserEff = outcome.P1Eff
-		matchRes.isTie = true
-	default:
-		log.Fatalf("invalid state for %s vs %s: %d", p1.Name(), p2.Name(), outcome)
+		matchRes.Winner = tie
 	}
 
-	matchResultCh <- matchRes
+	matchSummaryCh <- matchRes
 
 }
 
-func runTournamentOnMap(mapPath string, isRand bool, competitors []aiPlayer, matchResultCh chan matchResult) {
+func runTournamentOnMap(mapPath string, isRand bool, competitors []aiPlayer, matchSummaryCh chan matchSummary) {
 
 	var wg sync.WaitGroup
 	var randMapParams = newRandomMap()
@@ -224,7 +295,7 @@ func runTournamentOnMap(mapPath string, isRand bool, competitors []aiPlayer, mat
 			if i != j {
 				log.Printf("launching %s vs %s", p1.Name(), p2.Name())
 				wg.Add(1)
-				go playMap(mapPath, isRand, randMapParams, p1, p2, matchResultCh, &wg)
+				go playMap(mapPath, isRand, randMapParams, p1, p2, matchSummaryCh, &wg)
 			}
 		}
 	}
@@ -239,18 +310,18 @@ func main() {
 
 	competitors := []aiPlayer{
 		client.NewMinMaxIA(2),
-		client.NewMinMaxIA(5),
+		// client.NewMinMaxIA(5),
 		client.NewDumbIA(),
-		client.NewMinMaxIA(7),
+		// client.NewMinMaxIA(7),
 	}
 
-	matchResultCh := make(chan matchResult)
+	matchSummaryCh := make(chan matchSummary)
 	var leaderboard tournamentResult
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
-		for res := range matchResultCh {
+		for res := range matchSummaryCh {
 			leaderboard = append(leaderboard, res)
 		}
 		wg.Done()
@@ -263,23 +334,21 @@ func main() {
 
 		for _, mp := range mapPaths {
 			// could use go on this, but generate two many games at the same time
-			runTournamentOnMap(mp, false, competitors, matchResultCh)
+			runTournamentOnMap(mp, false, competitors, matchSummaryCh)
 		}
 	} else {
 		for i := 0; i < nRandMaps; i++ {
-			runTournamentOnMap("", true, competitors, matchResultCh)
+			runTournamentOnMap("", true, competitors, matchSummaryCh)
 		}
 	}
-	close(matchResultCh)
+	close(matchSummaryCh)
 	wg.Wait()
 
-	log.Printf("Games summary")
-	log.Printf("--------")
-	leaderboard.printMatchResults()
-	log.Println()
-	log.Printf("Final Scores")
-	log.Printf("--------")
-	leaderboard.printLeaderboard()
+	log.Printf("\nGames summary\n--------\n%s\n", leaderboard.matchResults())
+	log.Printf("\nFinal Scores\n--------\n%s", leaderboard.leaderboard())
+
+	failIf(utils.CreateDirIfNotExist("./out"), "")
+	leaderboard.save("./out/")
 
 	os.Exit(0)
 }
