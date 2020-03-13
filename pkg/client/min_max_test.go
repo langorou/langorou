@@ -153,6 +153,12 @@ func BenchmarkMinMax(b *testing.B) {
 	startState.SetCell(model.Coordinates{X: 8, Y: 1}, model.Enemy, 2)
 	startState.SetCell(model.Coordinates{X: 9, Y: 0}, model.Enemy, 53)
 
+	b.Run("heuristic", func (b *testing.B) {
+		for n := 0; n < b.N; n++ {
+			scoreState(startState)
+		}
+	})
+
 	for _, depth := range []uint8{2, 3, 4, 5, 6} {
 		b.Run(fmt.Sprintf("depth%d", depth), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
