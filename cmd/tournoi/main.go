@@ -27,9 +27,9 @@ const (
 	mapSizeMin      = 5
 	mapSizeMax      = 40
 	nHumanGroupsMin = 2
-	nHumanGroupsMax = 15
+	nHumanGroupsMax = 10
 	nMonsterMin     = 4
-	nMonsterMax     = 30
+	nMonsterMax     = 10
 )
 
 var mapPath string
@@ -63,6 +63,10 @@ type mapParams struct {
 	rows, columns, humans, monsters int
 }
 
+func (m *mapParams) String() string {
+	return fmt.Sprintf("(%2dx%2d) - %2dhums - %2dmonst", m.rows, m.columns, m.humans, m.monsters)
+}
+
 func newRandomMap() mapParams {
 	return mapParams{
 		rows:     getRandIntInRange(mapSizeMin, mapSizeMax),
@@ -83,14 +87,21 @@ func init() {
 	flag.IntVar(&timeoutS, "timeout", 8, "timeout in seconds for each move")
 }
 
-type aiPlayer struct {
-	ai client.IA
-}
+type aiPlayer client.IA
 
 type matchResult struct {
+	mapName           string
 	winner, looser    aiPlayer
+	isTie             bool
 	winEff, looserEff int
 	endTurn           int
+}
+
+func (mr *matchResult) String() string {
+	return fmt.Sprintf(
+		"%-15s VS %-15s | %3d - %3d | %3d turns | %s",
+		mr.winner.Name(), mr.looser.Name(), mr.winEff, mr.looserEff, mr.endTurn, mr.mapName,
+	)
 }
 
 type tournamentResult []matchResult
@@ -100,19 +111,33 @@ func playMap(mapPath string, isRand bool, randMapParams mapParams, p1, p2 aiPlay
 	defer wg.Done()
 
 	portUsed := make(chan int, 1)
+	gameOutcomeCh := make(chan server.GameOutcome, 1)
 
-	go server.StartServer(mapPath, isRand, randMapParams.rows, randMapParams.columns, randMapParams.humans, randMapParams.monsters, time.Duration(timeoutS)*time.Second, true, portUsed, true)
+	go server.StartServer(
+		mapPath,
+		isRand,
+		randMapParams.rows,
+		randMapParams.columns,
+		randMapParams.humans,
+		randMapParams.monsters,
+		time.Duration(timeoutS)*time.Second,
+		true,
+		portUsed,
+		true,
+		gameOutcomeCh,
+	)
+
 	port := <-portUsed
 
 	addr := fmt.Sprintf("localhost:%d", port)
 
 	log.Printf("Launching a game for p1 and p2 on %s", addr)
 
-	player1, err := client.NewTCPClient(addr, "langone", p1.ai)
+	player1, err := client.NewTCPClient(addr, p1.Name(), p1)
 	failIf(err, "")
 	failIf(player1.Init(), "fail to init player 1")
 
-	player2, err := client.NewTCPClient(addr, "langtwo", p2.ai)
+	player2, err := client.NewTCPClient(addr, p2.Name(), p2)
 	failIf(err, "")
 	failIf(player2.Init(), "fail to init player 2")
 
@@ -120,9 +145,42 @@ func playMap(mapPath string, isRand bool, randMapParams mapParams, p1, p2 aiPlay
 	go player1.Play()
 	player2.Play()
 
-	matchResultCh <- matchResult{
-		winner: p1, looser: p2,
+	outcome := <-gameOutcomeCh
+
+	matchRes := matchResult{
+		endTurn: outcome.Turn,
 	}
+
+	if isRand {
+		matchRes.mapName = randMapParams.String()
+	} else {
+		matchRes.mapName = mapPath
+	}
+
+	switch {
+	case outcome.P1Eff > outcome.P2Eff:
+		matchRes.winner = p1
+		matchRes.looser = p2
+		matchRes.winEff = outcome.P1Eff
+		matchRes.looserEff = outcome.P2Eff
+	case outcome.P1Eff < outcome.P2Eff:
+		matchRes.winner = p2
+		matchRes.looser = p1
+		matchRes.winEff = outcome.P2Eff
+		matchRes.looserEff = outcome.P1Eff
+
+	case outcome.P1Eff == outcome.P2Eff:
+		matchRes.winner = p2
+		matchRes.looser = p1
+		matchRes.winEff = outcome.P2Eff
+		matchRes.looserEff = outcome.P1Eff
+		matchRes.isTie = true
+	default:
+		log.Fatalf("invalid state for %s vs %s: %d", p1.Name(), p2.Name(), outcome)
+	}
+
+	matchResultCh <- matchRes
+
 }
 
 func runTournamentOnMap(mapPath string, isRand bool, competitors []aiPlayer, matchResultCh chan matchResult) {
@@ -133,6 +191,7 @@ func runTournamentOnMap(mapPath string, isRand bool, competitors []aiPlayer, mat
 	for i, p1 := range competitors {
 		for j, p2 := range competitors {
 			if i != j {
+				log.Printf("launching %s vs %s", p1.Name(), p2.Name())
 				wg.Add(1)
 				go playMap(mapPath, isRand, randMapParams, p1, p2, matchResultCh, &wg)
 			}
@@ -148,18 +207,23 @@ func main() {
 	flag.Parse()
 
 	competitors := []aiPlayer{
-		aiPlayer{ai: client.NewMinMaxIA(5)},
-		aiPlayer{ai: client.NewMinMaxIA(7)},
+		client.NewMinMaxIA(2),
+		client.NewMinMaxIA(5),
+		client.NewDumbIA(),
 	}
 
 	matchResultCh := make(chan matchResult)
 	var leaderboard tournamentResult
 
-	go func() {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func(wg *sync.WaitGroup) {
 		for res := range matchResultCh {
 			leaderboard = append(leaderboard, res)
 		}
-	}()
+		wg.Done()
+	}(&wg)
 
 	if mapFolder != "" {
 		log.Printf("Using the maps provided for the tournament")
@@ -176,8 +240,11 @@ func main() {
 		}
 	}
 	close(matchResultCh)
+	wg.Wait()
 
-	log.Printf("turnaments over\n%+v", leaderboard)
+	for _, mr := range leaderboard {
+		log.Print(mr.String())
+	}
 
 	os.Exit(0)
 }
