@@ -163,15 +163,17 @@ func scoreState(s model.State) float64 {
 		battleCoeff        = 0.5
 		neutralBattleCoeff = 0.5
 		cumScoreCoeff      = 0.001
+		winScore = 1e10
+		loseOverWinRatio = 1.2
 	)
 
 	cumScore := s.CumulativeScore
 
 	// Win and lose cases
 	if counts.ally == 0 {
-		return -1e10 + cumScore
+		return -(winScore*loseOverWinRatio) + cumScore
 	} else if counts.enemy == 0 {
-		return 1e10 + cumScore
+		return winScore + cumScore
 	}
 
 	for _, heuristic := range []struct {
