@@ -1,8 +1,9 @@
 package client
 
 import (
-	"github.com/langorou/langorou/pkg/client/model"
 	"math"
+
+	"github.com/langorou/langorou/pkg/client/model"
 )
 
 const (
@@ -43,7 +44,7 @@ func (h *Heuristic) alphabeta(state model.State, race model.Race, alpha float64,
 	// for each generated coup, we compute the list of potential outcomes and compute an average score
 	// weighted by the probabilities of these potential outcomes
 	for _, coup := range coups {
-		outcomes := applyCoup(state, race, coup, h.Parameters.WinThreshold)
+		outcomes := applyCoup(state, race, coup, h.WinThreshold)
 
 		score := 0.
 		// log.Printf("depth: %d", depth)

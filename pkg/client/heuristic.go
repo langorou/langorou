@@ -1,8 +1,9 @@
 package client
 
 import (
-	"github.com/langorou/langorou/pkg/client/model"
 	"math"
+
+	"github.com/langorou/langorou/pkg/client/model"
 )
 
 // HeuristicParameters defines the parameters used to compute the heuristic
@@ -28,27 +29,26 @@ type HeuristicParameters struct {
 
 // NewDefaultHeuristicParameters creates heuristic parameters
 func NewDefaultHeuristicParameters() HeuristicParameters {
-	return  HeuristicParameters{
+	return HeuristicParameters{
 		Counts:           1,
 		Battles:          0.5,
 		NeutralBattles:   0.5,
 		CumScore:         0.001,
 		WinScore:         1e10,
 		LoseOverWinRatio: 1.2,
-		WinThreshold: 0.8,
+		WinThreshold:     0.8,
 	}
 }
 
 // Heuristic represents a heuristic
 type Heuristic struct {
-	Parameters HeuristicParameters
+	HeuristicParameters
 }
 
 // NewHeuristic
 func NewHeuristic(params HeuristicParameters) Heuristic {
-	return Heuristic{Parameters: params}
+	return Heuristic{params}
 }
-
 
 // generateCoups generates coups for a given state and a given race
 // While a player _can_ make multiple moves within a coup, for now this function only
@@ -167,9 +167,8 @@ func (sc *scoreCounter) add(race model.Race, score float64) {
 	}
 }
 
-
 // scoreState is the heuristic for our IA
-func (h Heuristic) scoreState(s model.State) float64 {
+func (h *Heuristic) scoreState(s model.State) float64 {
 
 	// different counts participating in the heuristic
 	counts := scoreCounter{}
@@ -208,22 +207,22 @@ func (h Heuristic) scoreState(s model.State) float64 {
 
 	// Win and lose cases
 	if counts.ally == 0 {
-		return -(h.Parameters.WinScore*h.Parameters.LoseOverWinRatio) + cumScore
+		return -(h.WinScore * h.LoseOverWinRatio) + cumScore
 	} else if counts.enemy == 0 {
-		return h.Parameters.WinScore + cumScore
+		return h.WinScore + cumScore
 	}
 
 	for _, heuristic := range []struct {
 		coeff  float64
 		scores scoreCounter
 	}{
-		{h.Parameters.Counts, counts},
-		{h.Parameters.Battles, battleCounts},
-		{h.Parameters.NeutralBattles, neutralBattleCounts},
+		{h.Counts, counts},
+		{h.Battles, battleCounts},
+		{h.NeutralBattles, neutralBattleCounts},
 	} {
 		score := heuristic.scores.ally - heuristic.scores.enemy
 		total += score * heuristic.coeff
 	}
 
-	return total + (cumScore * h.Parameters.CumScore)
+	return total + (cumScore * h.CumScore)
 }
