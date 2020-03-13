@@ -47,7 +47,7 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	go server.StartServer(mapPath, useRand, rows, columns, humans, monster, time.Duration(timeoutS)*time.Second, false, nil, false)
+	go server.StartServer(mapPath, useRand, rows, columns, humans, monster, time.Duration(timeoutS)*time.Second, false, nil, false, nil)
 
 	addr := "localhost:5555"
 	player1, err := client.NewTCPClient(addr, "langone", client.NewMinMaxIA(7))
