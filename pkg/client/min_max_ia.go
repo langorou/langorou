@@ -6,7 +6,7 @@ import (
 )
 
 type MinMaxIA struct {
-	depth uint8
+	depth     uint8
 	heuristic Heuristic
 }
 
@@ -14,7 +14,7 @@ var _ IA = &MinMaxIA{}
 
 func NewMinMaxIA(depth uint8) *MinMaxIA {
 	return &MinMaxIA{
-		depth: depth,
+		depth:     depth,
 		heuristic: NewHeuristic(NewDefaultHeuristicParameters()),
 	}
 }

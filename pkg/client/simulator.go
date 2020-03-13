@@ -98,14 +98,14 @@ func applyMove(s model.State, race model.Race, target model.Coordinates, count u
 	P := winProbability(count, endCell.Count, isNeutral == 1)
 
 	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
-	if P >= winThreshold{
+	if P >= winThreshold {
 		// Consider it a win situation given the probability
-		endCount := uint8(P*float64(count)+float64(isNeutral*endCell.Count)*P)
+		endCount := uint8(P*float64(count) + float64(isNeutral*endCell.Count)*P)
 		s.SetCell(target, race, endCount)
 		return []potentialState{{s: s, probability: 1}}
 	} else if P < 1-winThreshold {
 		// Consider it a lose situation given the probability
-		endCount := uint8((1-P)*float64(endCell.Count))
+		endCount := uint8((1 - P) * float64(endCell.Count))
 		s.SetCell(target, race, endCount)
 		return []potentialState{{s: s, probability: 1}}
 	}
@@ -138,13 +138,13 @@ func applyMove(s model.State, race model.Race, target model.Coordinates, count u
 // winProbability of winning for the attaquant 1 with an effectif E1, agains E2
 // E2 might be Neutral
 func winProbability(E1, E2 uint8, E2isNeutral bool) float64 {
-	if E1 == E2 {
-		return 0.5
+	// True by property
+	if (E2isNeutral && E1 >= E2) || (!E2isNeutral && float64(E1) >= 1.5*float64(E2)) {
+		return 1
 	}
 
-	// True by property
-	if (E2isNeutral && E1 > E2) || (!E2isNeutral && float64(E1) >= 1.5*float64(E2)) {
-		return 1
+	if E1 == E2 {
+		return 0.5
 	}
 
 	if E1 < E2 {
