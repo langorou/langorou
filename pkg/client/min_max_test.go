@@ -72,7 +72,7 @@ func TestMinMax(t *testing.T) {
 		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
-			N:     68,
+			N:     34,
 			End:   model.Coordinates{X: 2, Y: 2},
 		}}, coup)
 	})
@@ -155,7 +155,7 @@ func BenchmarkMinMax(b *testing.B) {
 
 	b.Run("heuristic", func (b *testing.B) {
 		for n := 0; n < b.N; n++ {
-			scoreState(startState)
+			testHeuristic.scoreState(startState)
 		}
 	})
 

@@ -119,7 +119,15 @@ func generateMovesFromCell(s model.State, source model.Coordinates) []model.Move
 		if !ok {
 			continue
 		}
-		moves = append(moves, model.Move{Start: source, N: s.Grid[source].Count, End: target})
+
+		srcCount := s.Grid[source].Count
+
+		moves = append(moves, model.Move{Start: source, N: srcCount, End: target})
+
+		// TODO do not hardcode this, we should maybe look at how much neutrals are left or things like that
+		if srcCount > 15 {
+			moves = append(moves, model.Move{Start:source, N: srcCount /2, End: target})
+		}
 	}
 	return moves
 }
