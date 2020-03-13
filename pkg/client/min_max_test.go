@@ -1,12 +1,16 @@
 package client
 
 import (
+	"fmt"
+	"testing"
+
 	"github.com/langorou/langorou/pkg/client/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 const testDepth = 5
+
+var testHeuristic = NewHeuristic(NewDefaultHeuristicParameters())
 
 func TestMinMax(t *testing.T) {
 
@@ -22,7 +26,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{Y: 2}, model.Enemy, 12)
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 8)
 
-		coup, _ := findBestCoup(startState, testDepth)
+		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     8,
@@ -44,7 +48,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Neutral, 10)
 		startState.SetCell(model.Coordinates{X: 8, Y: 8}, model.Enemy, 8)
 
-		coup, _ := findBestCoup(startState, testDepth)
+		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 0, Y: 0},
 			N:     8,
@@ -65,7 +69,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 2, Y: 2}, model.Neutral, 7)
 		startState.SetCell(model.Coordinates{X: 7, Y: 4}, model.Enemy, 75)
 
-		coup, _ := findBestCoup(startState, testDepth)
+		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     68,
@@ -86,7 +90,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			{Start: model.Coordinates{X: 1, Y: 1}, End: model.Coordinates{}, N: 11},
 		}
 
-		potentialStates := applyCoup(s, model.Ally, coup)
+		potentialStates := applyCoup(s, model.Ally, coup, 1)
 
 		assert.Len(t, potentialStates, 1)
 		expected := model.NewState(2, 2)
@@ -103,7 +107,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			{Start: model.Coordinates{X: 1, Y: 1}, End: model.Coordinates{}, N: 8},
 		}
 
-		potentialStates := applyCoup(s, model.Ally, coup)
+		potentialStates := applyCoup(s, model.Ally, coup, 1)
 
 		assert.Len(t, potentialStates, 2)
 		expected1 := model.NewState(2, 2)
@@ -122,7 +126,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 	t.Run("minmax decision", func(t *testing.T) {
 		s := startState.Copy(false)
 		s.SetCell(model.Coordinates{X: 1}, model.Enemy, 15)
-		coup, _ := findBestCoup(s, testDepth)
+		coup, _ := testHeuristic.findBestCoup(s, testDepth)
 
 		// Probability 5/6 of winning if we attack the enemy directly
 		// only 3/4 if we get the villagers but the enemy attacks us after
@@ -132,4 +136,52 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			End:   model.Coordinates{X: 1, Y: 0},
 		}}, coup)
 	})
+}
+
+func BenchmarkMinMax(b *testing.B) {
+	startState := model.NewState(10, 10)
+	startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 68)
+	startState.SetCell(model.Coordinates{X: 2, Y: 2}, model.Neutral, 7)
+	startState.SetCell(model.Coordinates{X: 2, Y: 7}, model.Neutral, 18)
+	startState.SetCell(model.Coordinates{X: 3, Y: 3}, model.Ally, 11)
+	startState.SetCell(model.Coordinates{X: 5, Y: 7}, model.Neutral, 3)
+	startState.SetCell(model.Coordinates{X: 5, Y: 8}, model.Neutral, 4)
+	startState.SetCell(model.Coordinates{X: 5, Y: 9}, model.Neutral, 18)
+	startState.SetCell(model.Coordinates{X: 6, Y: 2}, model.Ally, 68)
+	startState.SetCell(model.Coordinates{X: 6, Y: 8}, model.Ally, 6)
+	startState.SetCell(model.Coordinates{X: 7, Y: 4}, model.Enemy, 25)
+	startState.SetCell(model.Coordinates{X: 8, Y: 1}, model.Enemy, 2)
+	startState.SetCell(model.Coordinates{X: 9, Y: 0}, model.Enemy, 53)
+
+	b.Run("heuristic", func(b *testing.B) {
+		for n := 0; n < b.N; n++ {
+			testHeuristic.scoreState(startState)
+		}
+	})
+
+	for _, depth := range []uint8{2, 3, 4, 5, 6} {
+		b.Run(fmt.Sprintf("depth%d", depth), func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				testHeuristic.findBestCoup(startState.Copy(false), depth)
+			}
+		})
+	}
+}
+
+func TestGenerateCoups(t *testing.T) {
+	startState := model.NewState(10, 10)
+	startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 68)
+	startState.SetCell(model.Coordinates{X: 2, Y: 2}, model.Neutral, 7)
+	startState.SetCell(model.Coordinates{X: 2, Y: 7}, model.Neutral, 18)
+	startState.SetCell(model.Coordinates{X: 3, Y: 3}, model.Ally, 11)
+	startState.SetCell(model.Coordinates{X: 5, Y: 7}, model.Neutral, 3)
+	startState.SetCell(model.Coordinates{X: 5, Y: 8}, model.Neutral, 4)
+	startState.SetCell(model.Coordinates{X: 5, Y: 9}, model.Neutral, 18)
+	startState.SetCell(model.Coordinates{X: 6, Y: 6}, model.Ally, 68)
+	startState.SetCell(model.Coordinates{X: 6, Y: 8}, model.Ally, 6)
+	startState.SetCell(model.Coordinates{X: 7, Y: 4}, model.Enemy, 25)
+	startState.SetCell(model.Coordinates{X: 8, Y: 1}, model.Enemy, 2)
+	startState.SetCell(model.Coordinates{X: 9, Y: 0}, model.Enemy, 53)
+
+	generateCoups(startState, model.Ally)
 }

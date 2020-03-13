@@ -1,8 +1,9 @@
 package client
 
 import (
-	"github.com/langorou/langorou/pkg/client/model"
 	"math"
+
+	"github.com/langorou/langorou/pkg/client/model"
 )
 
 const (
@@ -10,23 +11,23 @@ const (
 	negInfinity = -math.MaxFloat64
 )
 
-func findBestCoup(state model.State, depth uint8) (model.Coup, float64) {
-	return alphabeta(state, model.Ally, negInfinity, posInfinity, depth)
+func (h *Heuristic) findBestCoup(state model.State, depth uint8) (model.Coup, float64) {
+	return h.alphabeta(state, model.Ally, negInfinity, posInfinity, depth)
 }
 
 // alphabeta computes the best coup going at most at depth depth
-func alphabeta(state model.State, race model.Race, alpha float64, beta float64, depth uint8) (model.Coup, float64) {
+func (h *Heuristic) alphabeta(state model.State, race model.Race, alpha float64, beta float64, depth uint8) (model.Coup, float64) {
 	bestCoup := model.Coup{}
 
 	// Max depth reached
 	if depth <= 0 {
-		return bestCoup, scoreState(state)
+		return bestCoup, h.scoreState(state)
 	}
 
 	coups := generateCoups(state, race)
 	// No moves found
 	if len(coups) == 0 {
-		return bestCoup, scoreState(state)
+		return bestCoup, h.scoreState(state)
 	}
 
 	// Chose if we want to maximize (us) or minimize (enemy) our score
@@ -37,15 +38,18 @@ func alphabeta(state model.State, race model.Race, alpha float64, beta float64, 
 		f = math.Min
 	}
 
+	// Sort by killer moves
+	model.SortCoupsByQuickScore(coups, state)
+
 	// for each generated coup, we compute the list of potential outcomes and compute an average score
 	// weighted by the probabilities of these potential outcomes
 	for _, coup := range coups {
-		outcomes := applyCoup(state, race, coup)
+		outcomes := applyCoup(state, race, coup, h.WinThreshold)
 
 		score := 0.
 		// log.Printf("depth: %d", depth)
 		for _, outcome := range outcomes {
-			_, tmpScore := alphabeta(outcome.s, race.Opponent(), alpha, beta, depth-1)
+			_, tmpScore := h.alphabeta(outcome.s, race.Opponent(), alpha, beta, depth-1)
 			score += tmpScore * outcome.probability
 		}
 

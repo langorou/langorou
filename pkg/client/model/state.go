@@ -4,15 +4,15 @@ import (
 	"fmt"
 )
 
-type Race string
+type Race uint8
 
 const (
 	// Neutral Race
-	Neutral = "Neutral"
+	Neutral Race = iota
 	// Ally Race
-	Ally = "Ally"
+	Ally
 	// Enemy Race
-	Enemy = "Enemy"
+	Enemy
 )
 
 func (r Race) Opponent() Race {
@@ -21,7 +21,7 @@ func (r Race) Opponent() Race {
 	} else if r == Enemy {
 		return Ally
 	} else {
-		panic(fmt.Sprintf("Opponent asked for Race: '%s' this should not happen ", r))
+		panic(fmt.Sprintf("Opponent asked for Race: '%s' this should not happen ", []string{"Neutral", "Ally", "Enemy"}[r]))
 	}
 }
 
