@@ -52,11 +52,14 @@ func main() {
 	addr := "localhost:5555"
 	player1, err := client.NewTCPClient(addr, "langone", client.NewMinMaxIA(7))
 	failIf(err, "")
+	failIf(player1.Init(), "fail to init player 1")
+
 	player2, err := client.NewTCPClient(addr, "langtwo", client.NewMinMaxIA(5))
 	failIf(err, "")
+	failIf(player2.Init(), "fail to init player 2")
 
-	go player1.Start()
-	player2.Start()
+	go player1.Play()
+	player2.Play()
 
 	time.Sleep(5 * time.Minute)
 	os.Exit(0)
