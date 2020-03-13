@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/langorou/langorou/pkg/client/model"
@@ -27,6 +28,13 @@ type HeuristicParameters struct {
 	WinThreshold float64
 }
 
+func (hp *HeuristicParameters) String() string {
+	return fmt.Sprintf(
+		"c%3.2f_b%3.2f_nb%3.2f_cs%4.3f_ws%3.2e_lowr%3.2f_wt%3.2f",
+		hp.Counts, hp.Battles, hp.NeutralBattles, hp.CumScore, hp.WinScore, hp.LoseOverWinRatio, hp.WinThreshold,
+	)
+}
+
 // NewDefaultHeuristicParameters creates heuristic parameters
 func NewDefaultHeuristicParameters() HeuristicParameters {
 	return HeuristicParameters{
@@ -43,6 +51,10 @@ func NewDefaultHeuristicParameters() HeuristicParameters {
 // Heuristic represents a heuristic
 type Heuristic struct {
 	HeuristicParameters
+}
+
+func (h *Heuristic) String() string {
+	return h.HeuristicParameters.String()
 }
 
 // NewHeuristic
@@ -70,7 +82,7 @@ func generateCoups(s model.State, race model.Race) []model.Coup {
 			// Add the move to all the previous coups
 			for _, coup := range all[:max] {
 				// We have to make a copy here otherwise we will reuse the same array which will cause issues
-				newCoup := make(model.Coup, len(coup) + 1)
+				newCoup := make(model.Coup, len(coup)+1)
 				copy(newCoup, coup)
 				newCoup[len(coup)] = move
 

@@ -27,7 +27,7 @@ func failIf(err error, msg string) {
 }
 
 const (
-	nRandMaps       = 5 // number of random maps to generate
+	nRandMaps       = 1 // number of random maps to generate
 	mapSizeMin      = 5
 	mapSizeMax      = 40
 	nHumanGroupsMin = 2
@@ -310,9 +310,9 @@ func main() {
 
 	competitors := []aiPlayer{
 		client.NewMinMaxIA(2),
-		client.NewMinMaxIA(5),
+		// client.NewMinMaxIA(5),
 		client.NewDumbIA(),
-		client.NewMinMaxIA(7),
+		// client.NewMinMaxIA(7),
 	}
 
 	matchSummaryCh := make(chan matchSummary)
