@@ -54,18 +54,31 @@ func NewHeuristic(params HeuristicParameters) Heuristic {
 // While a player _can_ make multiple moves within a coup, for now this function only
 // returns individual moves.
 func generateCoups(s model.State, race model.Race) []model.Coup {
-	coups := []model.Coup{}
+	all := []model.Coup{}
 
 	for coord, cell := range s.Grid {
-		if cell.Race == race {
-			moves := generateMovesFromCell(s, coord)
-			for _, move := range moves {
-				coups = append(coups, model.Coup{move})
+		if cell.Race != race {
+			continue
+		}
+
+		moves := generateMovesFromCell(s, coord, cell)
+		max := len(all)
+		for _, move := range moves {
+			// Add the move alone
+			all = append(all, model.Coup{move})
+
+			// Add the move to all the previous coups
+			for _, coup := range all[:max] {
+				// We have to make a copy here otherwise we will reuse the same array which will cause issues
+				newCoup := make(model.Coup, len(coup) + 1)
+				copy(newCoup, coup)
+				newCoup[len(coup)] = move
+
+				all = append(all, newCoup)
 			}
 		}
 	}
-	// TODO: generate more coups
-	return coups
+	return all
 }
 
 // transformation represents a coordinate transformation
@@ -93,7 +106,7 @@ func transform(s model.State, c model.Coordinates, t transformation) (res model.
 	return model.Coordinates{X: xRes, Y: yRes}, true
 }
 
-func generateMovesFromCell(s model.State, source model.Coordinates) []model.Move {
+func generateMovesFromCell(s model.State, source model.Coordinates, cell model.Cell) []model.Move {
 	// Simplification: as long as we are doing one move per turn, we are better
 	// off moving all units and not a subset.
 	// This is not true anymore if we do multiple moves per turn, as keeping
@@ -120,9 +133,7 @@ func generateMovesFromCell(s model.State, source model.Coordinates) []model.Move
 			continue
 		}
 
-		srcCount := s.Grid[source].Count
-
-		moves = append(moves, model.Move{Start: source, N: srcCount, End: target})
+		moves = append(moves, model.Move{Start: source, N: cell.Count, End: target})
 
 		// TODO: splits
 	}

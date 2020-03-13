@@ -1,6 +1,8 @@
 package model
 
-import "sort"
+import (
+	"sort"
+)
 
 // Coordinates represents coordinates on the grid
 type Coordinates struct {
