@@ -23,13 +23,13 @@ func failIf(err error, msg string) {
 }
 
 const (
-	nRandMaps       = 3 // number of random maps to generate
+	nRandMaps       = 5 // number of random maps to generate
 	mapSizeMin      = 5
 	mapSizeMax      = 40
 	nHumanGroupsMin = 2
-	nHumanGroupsMax = 10
+	nHumanGroupsMax = 30
 	nMonsterMin     = 4
-	nMonsterMax     = 10
+	nMonsterMax     = 40
 )
 
 var mapPath string
@@ -105,6 +105,37 @@ func (mr *matchResult) String() string {
 }
 
 type tournamentResult []matchResult
+
+func (tr tournamentResult) printMatchResults() {
+	for _, mr := range tr {
+		log.Print(mr.String())
+	}
+}
+
+func (tr tournamentResult) printLeaderboard() {
+	// gagnant 3 points
+	// perdant 0 points
+	// égalité 1 point chacun
+	leaderboard := make(map[string]int)
+
+	for _, mr := range tr {
+		if _, ok := leaderboard[mr.looser.Name()]; !ok {
+			leaderboard[mr.looser.Name()] = 0 // We might never add points to the looser
+		}
+
+		if mr.isTie {
+			leaderboard[mr.winner.Name()]++
+			leaderboard[mr.looser.Name()]++
+		} else {
+			leaderboard[mr.winner.Name()] += 3
+		}
+	}
+
+	for name, score := range leaderboard {
+		// we'll not be sorted (random map)
+		log.Printf("%15s - %3d points", name, score)
+	}
+}
 
 func playMap(mapPath string, isRand bool, randMapParams mapParams, p1, p2 aiPlayer, matchResultCh chan matchResult, wg *sync.WaitGroup) {
 
@@ -210,6 +241,7 @@ func main() {
 		client.NewMinMaxIA(2),
 		client.NewMinMaxIA(5),
 		client.NewDumbIA(),
+		client.NewMinMaxIA(7),
 	}
 
 	matchResultCh := make(chan matchResult)
@@ -217,7 +249,6 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-
 	go func(wg *sync.WaitGroup) {
 		for res := range matchResultCh {
 			leaderboard = append(leaderboard, res)
@@ -242,9 +273,13 @@ func main() {
 	close(matchResultCh)
 	wg.Wait()
 
-	for _, mr := range leaderboard {
-		log.Print(mr.String())
-	}
+	log.Printf("Games summary")
+	log.Printf("--------")
+	leaderboard.printMatchResults()
+	log.Println()
+	log.Printf("Final Scores")
+	log.Printf("--------")
+	leaderboard.printLeaderboard()
 
 	os.Exit(0)
 }
