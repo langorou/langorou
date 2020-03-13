@@ -2,12 +2,15 @@ package client
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/langorou/langorou/pkg/client/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 const testDepth = 5
+
+var testHeuristic = NewHeuristic(NewDefaultHeuristicParameters())
 
 func TestMinMax(t *testing.T) {
 
@@ -23,7 +26,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{Y: 2}, model.Enemy, 12)
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 8)
 
-		coup, _ := findBestCoup(startState, testDepth)
+		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     8,
@@ -45,7 +48,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Neutral, 10)
 		startState.SetCell(model.Coordinates{X: 8, Y: 8}, model.Enemy, 8)
 
-		coup, _ := findBestCoup(startState, testDepth)
+		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 0, Y: 0},
 			N:     8,
@@ -66,7 +69,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 2, Y: 2}, model.Neutral, 7)
 		startState.SetCell(model.Coordinates{X: 7, Y: 4}, model.Enemy, 75)
 
-		coup, _ := findBestCoup(startState, testDepth)
+		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     68,
@@ -87,7 +90,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			{Start: model.Coordinates{X: 1, Y: 1}, End: model.Coordinates{}, N: 11},
 		}
 
-		potentialStates := applyCoup(s, model.Ally, coup)
+		potentialStates := applyCoup(s, model.Ally, coup, 1)
 
 		assert.Len(t, potentialStates, 1)
 		expected := model.NewState(2, 2)
@@ -104,7 +107,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			{Start: model.Coordinates{X: 1, Y: 1}, End: model.Coordinates{}, N: 8},
 		}
 
-		potentialStates := applyCoup(s, model.Ally, coup)
+		potentialStates := applyCoup(s, model.Ally, coup, 1)
 
 		assert.Len(t, potentialStates, 2)
 		expected1 := model.NewState(2, 2)
@@ -123,7 +126,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 	t.Run("minmax decision", func(t *testing.T) {
 		s := startState.Copy(false)
 		s.SetCell(model.Coordinates{X: 1}, model.Enemy, 15)
-		coup, _ := findBestCoup(s, testDepth)
+		coup, _ := testHeuristic.findBestCoup(s, testDepth)
 
 		// Probability 5/6 of winning if we attack the enemy directly
 		// only 3/4 if we get the villagers but the enemy attacks us after
@@ -153,7 +156,7 @@ func BenchmarkMinMax(b *testing.B) {
 	for _, depth := range []uint8{2, 3, 4, 5, 6} {
 		b.Run(fmt.Sprintf("depth%d", depth), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				findBestCoup(startState.Copy(false), depth)
+				testHeuristic.findBestCoup(startState.Copy(false), depth)
 			}
 		})
 	}

@@ -5,6 +5,51 @@ import (
 	"math"
 )
 
+// HeuristicParameters defines the parameters used to compute the heuristic
+type HeuristicParameters struct {
+	// Counts is a coefficient for the counts of populations
+	Counts float64
+	// Battles is a coefficient for battles against opponents
+	Battles float64
+	// NeutralBattles is a coefficient for battles against neutrals
+	NeutralBattles float64
+	// CumScore is a coefficient for the cumulative score (used to give more priority to scores achieved with shorter paths)
+	CumScore float64
+
+	// WinScore given to a win
+	WinScore float64
+
+	// Ratio of LoseScore / WinScore, allows to give less weight to battles
+	LoseOverWinRatio float64
+
+	// WinThreshold represents the threshold upon which we consider we will surely win (for instance P > 0.8 => P = 1), 1-winThreshold represents the loseThreshold
+	WinThreshold float64
+}
+
+// NewDefaultHeuristicParameters creates heuristic parameters
+func NewDefaultHeuristicParameters() HeuristicParameters {
+	return  HeuristicParameters{
+		Counts:           1,
+		Battles:          0.5,
+		NeutralBattles:   0.5,
+		CumScore:         0.001,
+		WinScore:         1e10,
+		LoseOverWinRatio: 1.2,
+		WinThreshold: 0.8,
+	}
+}
+
+// Heuristic represents a heuristic
+type Heuristic struct {
+	Parameters HeuristicParameters
+}
+
+// NewHeuristic
+func NewHeuristic(params HeuristicParameters) Heuristic {
+	return Heuristic{Parameters: params}
+}
+
+
 // generateCoups generates coups for a given state and a given race
 // While a player _can_ make multiple moves within a coup, for now this function only
 // returns individual moves.
@@ -122,8 +167,9 @@ func (sc *scoreCounter) add(race model.Race, score float64) {
 	}
 }
 
+
 // scoreState is the heuristic for our IA
-func scoreState(s model.State) float64 {
+func (h Heuristic) scoreState(s model.State) float64 {
 
 	// different counts participating in the heuristic
 	counts := scoreCounter{}
@@ -158,35 +204,26 @@ func scoreState(s model.State) float64 {
 
 	// TODO: make those parameters of a heuristic struct and try to tweak them
 	// TODO: distance power alpha instead of distance power 1
-	const (
-		countCoeff         = 1
-		battleCoeff        = 0.5
-		neutralBattleCoeff = 0.5
-		cumScoreCoeff      = 0.001
-		winScore = 1e10
-		loseOverWinRatio = 1.2
-	)
-
 	cumScore := s.CumulativeScore
 
 	// Win and lose cases
 	if counts.ally == 0 {
-		return -(winScore*loseOverWinRatio) + cumScore
+		return -(h.Parameters.WinScore*h.Parameters.LoseOverWinRatio) + cumScore
 	} else if counts.enemy == 0 {
-		return winScore + cumScore
+		return h.Parameters.WinScore + cumScore
 	}
 
 	for _, heuristic := range []struct {
 		coeff  float64
 		scores scoreCounter
 	}{
-		{countCoeff, counts},
-		{battleCoeff, battleCounts},
-		{neutralBattleCoeff, neutralBattleCounts},
+		{h.Parameters.Counts, counts},
+		{h.Parameters.Battles, battleCounts},
+		{h.Parameters.NeutralBattles, neutralBattleCounts},
 	} {
 		score := heuristic.scores.ally - heuristic.scores.enemy
 		total += score * heuristic.coeff
 	}
 
-	return total + (cumScore * cumScoreCoeff)
+	return total + (cumScore * h.Parameters.CumScore)
 }

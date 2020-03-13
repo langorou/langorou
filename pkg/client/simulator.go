@@ -12,7 +12,7 @@ type potentialState struct {
 }
 
 // applyCoup computes the possibles states after applying a Coup (a list of moves)
-func applyCoup(origState model.State, race model.Race, coup model.Coup) []potentialState {
+func applyCoup(origState model.State, race model.Race, coup model.Coup, winThreshold float64) []potentialState {
 	// TODO improve this function, it's not really efficient, some moves are
 
 	// Start with the current state with probability 1
@@ -41,7 +41,7 @@ func applyCoup(origState model.State, race model.Race, coup model.Coup) []potent
 				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, origState.Grid[move.Start].Race))
 			}
 
-			states = applyMoveOnPossibleStates(states, race, lastEndCoordinates, count)
+			states = applyMoveOnPossibleStates(states, race, lastEndCoordinates, count, winThreshold)
 			count = 0
 		}
 
@@ -50,19 +50,19 @@ func applyCoup(origState model.State, race model.Race, coup model.Coup) []potent
 	}
 
 	// Apply the remaining moves
-	states = applyMoveOnPossibleStates(states, race, lastEndCoordinates, count)
+	states = applyMoveOnPossibleStates(states, race, lastEndCoordinates, count, winThreshold)
 
 	return states
 }
 
 // applyMoveOnPossibleStates is used by applyCoup to iteratively compute the list of possible states
 // that can be reached from a state and a list of moves (a coup)
-func applyMoveOnPossibleStates(states []potentialState, race model.Race, target model.Coordinates, count uint8) []potentialState {
+func applyMoveOnPossibleStates(states []potentialState, race model.Race, target model.Coordinates, count uint8, winThreshold float64) []potentialState {
 	// We will have at lest len(states)
 	result := make([]potentialState, 0, len(states))
 
 	for _, state := range states {
-		outcomes := applyMove(state.s, race, target, count)
+		outcomes := applyMove(state.s, race, target, count, winThreshold)
 
 		for _, outcome := range outcomes {
 			// Take into account the probability of the previous states
@@ -76,7 +76,7 @@ func applyMoveOnPossibleStates(states []potentialState, race model.Race, target 
 
 // applyMove computes the possible next states from a given state and ONLY ONE move
 // XXX: WARNING it re-uses the given state, so it will become stale after
-func applyMove(s model.State, race model.Race, target model.Coordinates, count uint8) []potentialState {
+func applyMove(s model.State, race model.Race, target model.Coordinates, count uint8, winThreshold float64) []potentialState {
 
 	endCell := s.Grid[target]
 
@@ -98,9 +98,15 @@ func applyMove(s model.State, race model.Race, target model.Coordinates, count u
 	P := winProbability(count, endCell.Count, isNeutral == 1)
 
 	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
-	if P == 1 {
-		// We surely win, same as "nobody there"
-		s.SetCell(target, race, count+(isNeutral*endCell.Count)) // if we totally win against Neutral, we convert all of them
+	if P >= winThreshold{
+		// Consider it a win situation given the probability
+		endCount := uint8(P*float64(count)+float64(isNeutral*endCell.Count)*P)
+		s.SetCell(target, race, endCount)
+		return []potentialState{{s: s, probability: 1}}
+	} else if P < 1-winThreshold {
+		// Consider it a lose situation given the probability
+		endCount := uint8((1-P)*float64(endCell.Count))
+		s.SetCell(target, race, endCount)
 		return []potentialState{{s: s, probability: 1}}
 	}
 
