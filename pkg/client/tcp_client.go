@@ -2,9 +2,10 @@ package client
 
 import (
 	"fmt"
-	"github.com/langorou/langorou/pkg/client/model"
 	"log"
 	"net"
+
+	"github.com/langorou/langorou/pkg/client/model"
 
 	"github.com/langorou/langorou/pkg/utils"
 )
@@ -269,21 +270,45 @@ func (c *TCPClient) ReceiveSpecificCommand(assertCmd ServerCmd) error {
 	return nil
 }
 
+// Play the game, should be launched after Init()
+func (c *TCPClient) Play() error {
+	for {
+		cmd, err := c.ReceiveMsg()
+		if err != nil {
+			return err
+		}
+
+		switch cmd {
+		case UPD:
+			if err = c.SendMove(c.game.Mov()); err != nil {
+				return err
+			}
+		case BYE:
+			log.Printf("Received BYE, stopping the client...")
+			return nil
+		case END:
+			log.Printf("Received END, getting ready for the next game...")
+			return c.Start()
+		default:
+			return fmt.Errorf("received unexpected command: %s", cmd)
+		}
+	}
+}
+
 // Start with the name
 func (c *TCPClient) Start() error {
 	// TODO: it's possible to receive BYE here, if we restarted a game
 
-	if err := c.init(); err != nil {
+	if err := c.Init(); err != nil {
 		return fmt.Errorf("an error occurred during init: %s", err)
 	}
 	log.Print("Successfully init !")
 
-	log.Printf("TODO")
-
-	return nil
+	return c.Play()
 }
 
-func (c *TCPClient) init() error {
+// Init the game
+func (c *TCPClient) Init() error {
 	// Send name
 	err := c.SendName()
 	if err != nil {
@@ -314,25 +339,5 @@ func (c *TCPClient) init() error {
 		return err
 	}
 
-	for {
-		cmd, err := c.ReceiveMsg()
-		if err != nil {
-			return err
-		}
-
-		switch cmd {
-		case UPD:
-			if err = c.SendMove(c.game.Mov()); err != nil {
-				return err
-			}
-		case BYE:
-			log.Printf("Received BYE, stopping the client...")
-			return nil
-		case END:
-			log.Printf("Received END, getting ready for the next game...")
-			return c.Start()
-		default:
-			return fmt.Errorf("received unexpected command: %s", cmd)
-		}
-	}
+	return nil
 }

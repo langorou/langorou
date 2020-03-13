@@ -26,7 +26,7 @@ func (r Race) Opponent() Race {
 }
 
 type Cell struct {
-	Count uint8 // float used for potential State, used in heuristic computation
+	Count uint8
 	Race  Race
 }
 
