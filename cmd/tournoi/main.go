@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	_ "net/http/pprof"
@@ -22,13 +23,13 @@ func failIf(err error, msg string) {
 }
 
 const (
-	nRandMaps       = 5 // number of random maps to generate
+	nRandMaps       = 3 // number of random maps to generate
 	mapSizeMin      = 5
-	mapSizeMax      = 50
+	mapSizeMax      = 40
 	nHumanGroupsMin = 2
-	nHumanGroupsMax = 30
+	nHumanGroupsMax = 15
 	nMonsterMin     = 4
-	nMonsterMax     = 60
+	nMonsterMax     = 30
 )
 
 var mapPath string
@@ -94,7 +95,9 @@ type matchResult struct {
 
 type tournamentResult []matchResult
 
-func playMap(mapPath string, isRand bool, randMapParams mapParams, p1, p2 aiPlayer, matchResultCh chan matchResult) {
+func playMap(mapPath string, isRand bool, randMapParams mapParams, p1, p2 aiPlayer, matchResultCh chan matchResult, wg *sync.WaitGroup) {
+
+	defer wg.Done()
 
 	portUsed := make(chan int, 1)
 
@@ -116,21 +119,27 @@ func playMap(mapPath string, isRand bool, randMapParams mapParams, p1, p2 aiPlay
 	// TODO get match result
 	go player1.Play()
 	player2.Play()
-	matchResultCh <- matchResult{}
+
+	matchResultCh <- matchResult{
+		winner: p1, looser: p2,
+	}
 }
 
 func runTournamentOnMap(mapPath string, isRand bool, competitors []aiPlayer, matchResultCh chan matchResult) {
 
+	var wg sync.WaitGroup
 	var randMapParams = newRandomMap()
 
 	for i, p1 := range competitors {
 		for j, p2 := range competitors {
 			if i != j {
-				go playMap(mapPath, isRand, randMapParams, p1, p2, matchResultCh)
+				wg.Add(1)
+				go playMap(mapPath, isRand, randMapParams, p1, p2, matchResultCh, &wg)
 			}
 		}
-
 	}
+
+	wg.Wait()
 
 }
 
@@ -139,12 +148,18 @@ func main() {
 	flag.Parse()
 
 	competitors := []aiPlayer{
-		aiPlayer{ai: client.NewMinMaxIA(7)},
+		aiPlayer{ai: client.NewMinMaxIA(5)},
 		aiPlayer{ai: client.NewMinMaxIA(7)},
 	}
 
 	matchResultCh := make(chan matchResult)
 	var leaderboard tournamentResult
+
+	go func() {
+		for res := range matchResultCh {
+			leaderboard = append(leaderboard, res)
+		}
+	}()
 
 	if mapFolder != "" {
 		log.Printf("Using the maps provided for the tournament")
@@ -152,6 +167,7 @@ func main() {
 		mapPaths := getMaps(mapFolder)
 
 		for _, mp := range mapPaths {
+			// could use go on this, but generate two many games at the same time
 			runTournamentOnMap(mp, false, competitors, matchResultCh)
 		}
 	} else {
@@ -159,10 +175,9 @@ func main() {
 			runTournamentOnMap("", true, competitors, matchResultCh)
 		}
 	}
+	close(matchResultCh)
 
-	for res := range matchResultCh {
-		leaderboard = append(leaderboard, res)
-	}
+	log.Printf("turnaments over\n%+v", leaderboard)
 
 	os.Exit(0)
 }
