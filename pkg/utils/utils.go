@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"log"
+	"math/rand"
 	"os"
 	"unicode"
 )
@@ -26,4 +28,16 @@ func CreateDirIfNotExist(dir string) error {
 	}
 
 	return nil
+}
+
+// GetRandIntInRange returns a random int from specific range
+func GetRandIntInRange(min, max int) int {
+	return min + rand.Intn(max+min)
+}
+
+// FailIf logs a fatal error and exit
+func FailIf(err error, msg string) {
+	if err != nil {
+		log.Fatalf("error %s: %v", msg, err)
+	}
 }
