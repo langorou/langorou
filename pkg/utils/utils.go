@@ -32,7 +32,7 @@ func CreateDirIfNotExist(dir string) error {
 
 // GetRandIntInRange returns a random int from specific range
 func GetRandIntInRange(min, max int) int {
-	return min + rand.Intn(max+min)
+	return min + rand.Intn(max-min)
 }
 
 // FailIf logs a fatal error and exit

@@ -27,6 +27,7 @@ github.com/langorou/twilight v0.0.0-20200313152412-48ce8ce30072 h1:J5CXoj9QaAE1y
 github.com/langorou/twilight v0.0.0-20200313152412-48ce8ce30072/go.mod h1:2Uj64yEAmO/Mu6BeZv+rF/IibuNO+jyshQd7VuS45ak=
 github.com/langorou/twilight v0.0.0-20200314095244-15d8489984ae h1:LtNHdgYMNDji/1EyrQzeG41fo/ELpYErFT3ScIMLyPk=
 github.com/langorou/twilight v0.0.0-20200314095244-15d8489984ae/go.mod h1:2Uj64yEAmO/Mu6BeZv+rF/IibuNO+jyshQd7VuS45ak=
+github.com/langorou/twilight v0.0.0-20200314213720-96c05cf1858d/go.mod h1:2Uj64yEAmO/Mu6BeZv+rF/IibuNO+jyshQd7VuS45ak=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

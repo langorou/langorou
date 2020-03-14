@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"io/ioutil"
 	"log"
+
+	"github.com/langorou/langorou/pkg/tournament"
 	"github.com/langorou/twilight/server"
 )
 
@@ -25,8 +28,10 @@ func main() {
 		log.Fatalf("failed to read replay file: %s", err)
 	}
 
-	var replay 
+	var replay tournament.MatchSummary
 
-	server.StartWebAppFromHistory(repl)
+	json.Unmarshal(replayBytes, &replay)
+
+	server.StartWebAppFromHistory(replay.History)
 
 }

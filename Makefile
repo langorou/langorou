@@ -24,6 +24,10 @@ auto:
 tournoi:
 	${GOCMD} run cmd/tournoi/main.go
 
+.PHONY: replay
+replay:
+	${GOCMD} run cmd/replay/main.go -replay
+
 .PHONY: test
 test:
 	${GOCMD} test -v ./...

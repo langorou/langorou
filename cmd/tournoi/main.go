@@ -23,15 +23,7 @@ func failIf(err error, msg string) {
 	}
 }
 
-const (
-	nRandMaps       = 3 // number of random maps to generate
-	mapSizeMin      = 5
-	mapSizeMax      = 40
-	nHumanGroupsMin = 2
-	nHumanGroupsMax = 30
-	nMonsterMin     = 4
-	nMonsterMax     = 40
-)
+const nRandMaps = 1 // number of random maps to generate
 
 var mapPath string
 var mapFolder string
@@ -72,10 +64,10 @@ func main() {
 	flag.Parse()
 
 	competitors := []tournament.AIPlayer{
-		client.NewMinMaxIA(2),
+		// client.NewMinMaxIA(2),
 		client.NewMinMaxIA(5),
 		client.NewDumbIA(),
-		client.NewMinMaxIA(7),
+		// client.NewMinMaxIA(7),
 	}
 
 	matchSummaryCh := make(chan tournament.MatchSummary)
@@ -101,7 +93,12 @@ func main() {
 		}
 	} else {
 		limits := tournament.RandMapLimits{
-			mapSizeMin, mapSizeMax, nHumanGroupsMin, nHumanGroupsMax, nMonsterMin, nMonsterMax,
+			MapSizeMin:      10,
+			MapSizeMax:      16,
+			NHumanGroupsMin: 2,
+			NHumanGroupsMax: 30,
+			NMonsterMin:     4,
+			NMonsterMax:     40,
 		}
 
 		for i := 0; i < nRandMaps; i++ {
