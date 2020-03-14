@@ -20,6 +20,10 @@ build:
 auto:
 	${GOCMD} run cmd/auto/main.go -rand
 
+.PHONY: tournoi
+tournoi:
+	${GOCMD} run cmd/tournoi/main.go
+
 .PHONY: test
 test:
 	${GOCMD} test -v ./...
