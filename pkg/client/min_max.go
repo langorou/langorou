@@ -23,20 +23,23 @@ const (
 	exact
 )
 
-func (h *Heuristic) findBestCoup(state model.State, depth uint8) (model.Coup, float64) {
+func (h *Heuristic) findBestCoup(state model.State, maxDepth uint8) (coup model.Coup, score float64) {
 	tt := map[uint64]save{}
-	return h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, depth)
+
+	for depth := uint8(1); depth <= maxDepth; depth++ {
+		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
+	}
+
+	return coup, score
 }
 
 // alphabeta computes the best coup going at most at depth depth
-func (h *Heuristic) alphabeta(tt map[uint64]save, state model.State, race model.Race, alpha float64, beta float64, depth uint8) (model.Coup, float64) {
-	alphaOrig := alpha
+func (h *Heuristic) alphabeta(tt map[uint64]save, state model.State, race model.Race, alpha float64, beta float64, depth uint8, maxDepth uint8) (model.Coup, float64) {
 	bestCoup := model.Coup{}
 
 	hash := state.Hash()
 
-	if rec, ok := tt[hash]; ok && rec.depth >= depth {
-		// log.Printf("cache hit ! record: %+v, alpha: %f, beta: %f, current depth: %d",  rec, alpha, beta, depth)
+	if rec, ok := tt[hash]; ok && rec.depth == depth {
 		if rec.typ == exact {
 			return rec.coup, rec.score
 		} else if rec.typ == lower {
@@ -50,19 +53,22 @@ func (h *Heuristic) alphabeta(tt map[uint64]save, state model.State, race model.
 		}
 	}
 
-	// Max depth reached
-	if depth <= 0 {
-		return bestCoup, h.scoreState(state)
+	if depth >= maxDepth { // Max depth reached
+		score := h.scoreState(state)
+		tt[hash] = save{coup: bestCoup, score: score, depth: depth, typ: exact}
+		return bestCoup, score
 	}
 
 	coups := generateCoups(state, race)
-	// No moves found
-	if len(coups) == 0 {
+	if len(coups) == 0 { // or no more moves found
+		score := h.scoreState(state)
+		tt[hash] = save{coup: bestCoup, score: score, depth: depth, typ: exact}
 		return bestCoup, h.scoreState(state)
 	}
 
-	if rec, ok := tt[hash]; ok {
+	if rec, ok := tt[hash]; ok && len(rec.coup) != 0 {
 		// Put the current move first
+		// TODO: duplicated
 		coups = append([]model.Coup{rec.coup}, coups...)
 	}
 
@@ -85,7 +91,7 @@ func (h *Heuristic) alphabeta(tt map[uint64]save, state model.State, race model.
 		score := 0.
 		// log.Printf("depth: %d", depth)
 		for _, outcome := range outcomes {
-			_, tmpScore := h.alphabeta(tt, outcome.s, race.Opponent(), alpha, beta, depth-1)
+			_, tmpScore := h.alphabeta(tt, outcome.s, race.Opponent(), alpha, beta, depth+1, maxDepth)
 			score += tmpScore * outcome.probability
 		}
 
@@ -114,10 +120,10 @@ func (h *Heuristic) alphabeta(tt map[uint64]save, state model.State, race model.
 	}
 
 	s := save{depth: depth, coup: bestCoup, score: value, typ: exact}
-	if value <= alphaOrig {
-		s.typ = upper
-	} else if value >= beta {
+	if alpha >= value {
 		s.typ = lower
+	} else if value >= beta {
+		s.typ = upper
 	}
 
 	tt[hash] = s

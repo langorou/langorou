@@ -155,14 +155,8 @@ func generateComplicatedState() model.State {
 	return s
 }
 
-func BenchmarkMinMax(b *testing.B) {
+func BenchmarkAB(b *testing.B) {
 	startState := generateComplicatedState()
-
-	b.Run("heuristic", func(b *testing.B) {
-		for n := 0; n < b.N; n++ {
-			testHeuristic.scoreState(startState)
-		}
-	})
 
 	for _, depth := range []uint8{2, 3, 4, 5, 6} {
 		b.Run(fmt.Sprintf("depth%d", depth), func(b *testing.B) {
@@ -170,6 +164,13 @@ func BenchmarkMinMax(b *testing.B) {
 				testHeuristic.findBestCoup(startState.Copy(false), depth)
 			}
 		})
+	}
+}
+
+func BenchmarkHeuristic(b *testing.B) {
+	startState := generateComplicatedState()
+	for n := 0; n < b.N; n++ {
+		testHeuristic.scoreState(startState)
 	}
 }
 
