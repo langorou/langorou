@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/spaolacci/murmur3"
 )
 
 type Race uint8
@@ -119,4 +120,20 @@ func (s State) allies() float64 {
 	}
 
 	return float64(count)
+}
+
+var hashBuffer = []byte{}
+
+// Hash gives the hash for the given state
+// NOT USABLE in parallel for now because hashBuffer is a global
+func (s *State) Hash() uint64 {
+	// Trick to avoid allocating a buffer every time, we just reuse the same, caveat: not suitable for goroutines
+	// this will also leak memory but it's neglectable because it will leak for at much:
+	// N_bytes_per_entry * Max_entries = 4 * 256 * 256 = 256 Kb
+	hashBuffer = hashBuffer[:0]
+	for coord, cell := range s.Grid {
+		hashBuffer = append(hashBuffer, coord.X, coord.Y, cell.Count, uint8(cell.Race))
+	}
+
+	return murmur3.Sum64(hashBuffer)
 }
