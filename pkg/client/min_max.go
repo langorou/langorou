@@ -42,10 +42,14 @@ func (t *transpositionTable) get(hash uint64, depth uint8) (result, bool) {
 	return rec, false
 }
 
-func (t *transpositionTable) save(hash uint64, s result) {
-	if _, ok := t.t[hash]; ok {
-		t.collisions += 1
+func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, depth uint8, alpha float64, beta float64) {
+	s := result{coup: coup, score: value, depth: depth, typ: exact}
+	if alpha >= value {
+		s.typ = lower
+	} else if value >= beta {
+		s.typ = upper
 	}
+
 	t.t[hash] = s
 }
 
@@ -84,22 +88,24 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race mo
 	}
 
 	if depth >= maxDepth { // Max depth reached
-		score := h.scoreState(state)
-		tt.save(hash, result{coup: bestCoup, score: score, depth: depth, typ: exact})
-		return bestCoup, score
+		value := h.scoreState(state)
+		tt.save(hash, bestCoup, value, depth, alpha, beta)
+		return bestCoup, value
 	}
 
 	coups := generateCoups(state, race)
 	if len(coups) == 0 { // or no more moves found
-		score := h.scoreState(state)
-		tt.save(hash, result{coup: bestCoup, score: score, depth: depth, typ: exact})
-		return bestCoup, h.scoreState(state)
+		value := h.scoreState(state)
+		tt.save(hash, bestCoup, value, depth, alpha, beta)
+		return bestCoup, value
 	}
 
 	if cached && len(rec.coup) != 0 {
 		// Put the current move first
 		// TODO: the move will be duplicated
-		coups = append([]model.Coup{rec.coup}, coups...)
+		tmp := coups[0]
+		coups[0] = rec.coup
+		coups = append(coups, tmp)
 	}
 
 	// Chose if we want to maximize (us) or minimize (enemy) our score
@@ -146,14 +152,6 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race mo
 		}
 	}
 
-	s := result{depth: depth, coup: bestCoup, score: value, typ: exact}
-	if alpha >= value {
-		s.typ = lower
-	} else if value >= beta {
-		s.typ = upper
-	}
-
-	tt.save(hash, s)
-
+	tt.save(hash, bestCoup, value, depth, alpha, beta)
 	return bestCoup, value
 }

@@ -137,45 +137,37 @@ func TestSimulationAllyNeutral(t *testing.T) {
 	})
 }
 
-func generateComplicatedState() model.State {
-	s := model.NewState(10, 10)
-	s.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 68)
-	s.SetCell(model.Coordinates{X: 2, Y: 2}, model.Neutral, 7)
-	s.SetCell(model.Coordinates{X: 2, Y: 7}, model.Neutral, 18)
-	s.SetCell(model.Coordinates{X: 3, Y: 3}, model.Ally, 11)
-	s.SetCell(model.Coordinates{X: 5, Y: 7}, model.Neutral, 3)
-	s.SetCell(model.Coordinates{X: 5, Y: 8}, model.Neutral, 4)
-	s.SetCell(model.Coordinates{X: 5, Y: 9}, model.Neutral, 18)
-	s.SetCell(model.Coordinates{X: 6, Y: 2}, model.Ally, 68)
-	s.SetCell(model.Coordinates{X: 6, Y: 8}, model.Ally, 6)
-	s.SetCell(model.Coordinates{X: 7, Y: 4}, model.Enemy, 25)
-	s.SetCell(model.Coordinates{X: 8, Y: 1}, model.Enemy, 2)
-	s.SetCell(model.Coordinates{X: 9, Y: 0}, model.Enemy, 53)
-
-	return s
-}
-
 func BenchmarkAB(b *testing.B) {
-	startState := generateComplicatedState()
+	cplxState := model.GenerateComplicatedState()
 
 	for _, depth := range []uint8{2, 3, 4, 5, 6} {
-		b.Run(fmt.Sprintf("depth%d", depth), func(b *testing.B) {
+		b.Run(fmt.Sprintf("depth%d_complex", depth), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				testHeuristic.findBestCoup(startState.Copy(false), depth)
+				testHeuristic.findBestCoup(cplxState.Copy(false), depth)
+			}
+		})
+	}
+
+	smplState := model.GenerateSimpleState()
+
+	for _, depth := range []uint8{2, 3, 4, 5, 6} {
+		b.Run(fmt.Sprintf("depth%d_simple", depth), func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				testHeuristic.findBestCoup(smplState.Copy(false), depth)
 			}
 		})
 	}
 }
 
 func BenchmarkHeuristic(b *testing.B) {
-	startState := generateComplicatedState()
+	startState := model.GenerateComplicatedState()
 	for n := 0; n < b.N; n++ {
 		testHeuristic.scoreState(startState)
 	}
 }
 
 func BenchmarkHash(b *testing.B) {
-	startState := generateComplicatedState()
+	startState := model.GenerateComplicatedState()
 
 	for n := 0; n < b.N; n++ {
 		startState.Hash(model.Ally)
@@ -183,6 +175,6 @@ func BenchmarkHash(b *testing.B) {
 }
 
 func TestGenerateCoups(t *testing.T) {
-	startState := generateComplicatedState()
+	startState := model.GenerateComplicatedState()
 	generateCoups(startState, model.Ally)
 }
