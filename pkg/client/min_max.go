@@ -27,7 +27,7 @@ const (
 )
 
 type transpositionTable struct {
-	t map[uint64]result
+	t                        map[uint64]result
 	hits, misses, collisions uint
 }
 
@@ -51,7 +51,7 @@ func (t *transpositionTable) save(hash uint64, s result) {
 }
 
 func (h *Heuristic) findBestCoup(state model.State, maxDepth uint8) (coup model.Coup, score float64) {
-	tt := &transpositionTable{map[uint64]result{}, 0,0, 0}
+	tt := &transpositionTable{map[uint64]result{}, 0, 0, 0}
 
 	for depth := uint8(1); depth <= maxDepth; depth++ {
 		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
@@ -59,7 +59,7 @@ func (h *Heuristic) findBestCoup(state model.State, maxDepth uint8) (coup model.
 
 	// TODO: accept time limit and pass a channel
 
-	log.Printf("misses: %d, hits: %d, hit ratio: %f, collisions: %d, entries: %d", tt.misses, tt.hits, float64(tt.hits) / (float64(tt.hits + tt.misses)), tt.collisions, len(tt.t))
+	log.Printf("misses: %d, hits: %d, hit ratio: %f, collisions: %d, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), tt.collisions, len(tt.t))
 	return coup, score
 }
 
@@ -70,7 +70,7 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race mo
 	hash := state.Hash()
 
 	rec, cached := tt.get(hash, depth)
-	if  cached {
+	if cached {
 		if rec.typ == exact {
 			return rec.coup, rec.score
 		} else if rec.typ == lower {
@@ -86,14 +86,14 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race mo
 
 	if depth >= maxDepth { // Max depth reached
 		score := h.scoreState(state)
-		tt.save(hash , result{coup: bestCoup, score: score, depth: depth, typ: exact})
+		tt.save(hash, result{coup: bestCoup, score: score, depth: depth, typ: exact})
 		return bestCoup, score
 	}
 
 	coups := generateCoups(state, race)
 	if len(coups) == 0 { // or no more moves found
 		score := h.scoreState(state)
-		tt.save(hash , result{coup: bestCoup, score: score, depth: depth, typ: exact})
+		tt.save(hash, result{coup: bestCoup, score: score, depth: depth, typ: exact})
 		return bestCoup, h.scoreState(state)
 	}
 

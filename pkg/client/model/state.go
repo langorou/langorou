@@ -141,7 +141,6 @@ func (u uint32sortable) Swap(i, j int) {
 
 var hashBuffer = uint32sortable{}
 
-
 // Hash gives the hash for the given state
 // NOT USABLE in parallel for now because hashBuffer is a global
 func (s *State) Hash() uint64 {
@@ -150,10 +149,9 @@ func (s *State) Hash() uint64 {
 	// N_bytes_per_entry * Max_entries = 4 * 256 * 256 = 256 Kb
 	hashBuffer = hashBuffer[:0]
 	for coord, cell := range s.Grid {
-		b := uint32(coord.X) | uint32(coord.Y) << 8 | uint32(cell.Count) << 16 | uint32(cell.Race) << 24
-		hashBuffer = append(hashBuffer,b)
+		b := uint32(coord.X) | uint32(coord.Y)<<8 | uint32(cell.Count)<<16 | uint32(cell.Race)<<24
+		hashBuffer = append(hashBuffer, b)
 	}
-
 
 	sort.Sort(hashBuffer)
 	header := *(*reflect.SliceHeader)(unsafe.Pointer(&hashBuffer))
