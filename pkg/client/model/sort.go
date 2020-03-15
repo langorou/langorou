@@ -28,3 +28,17 @@ func partition(arr []uint32, low int, high int) int {
 	arr[i], arr[high] = arr[high], arr[i]
 	return i
 }
+
+type sortableU32 []uint32
+
+func (u sortableU32) Len() int {
+	return len(u)
+}
+
+func (u sortableU32) Less(i, j int) bool {
+	return u[i] < u[j]
+}
+
+func (u sortableU32) Swap(i, j int) {
+	u[i], u[j] = u[j], u[i]
+}

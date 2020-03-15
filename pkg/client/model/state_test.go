@@ -5,20 +5,6 @@ import (
 	"testing"
 )
 
-type sortableU32 []uint32
-
-func (u sortableU32) Len() int {
-	return len(u)
-}
-
-func (u sortableU32) Less(i, j int) bool {
-	return u[i] < u[j]
-}
-
-func (u sortableU32) Swap(i, j int) {
-	u[i], u[j] = u[j], u[i]
-}
-
 func BenchmarkSortStd(b *testing.B) {
 	s := GenerateComplicatedState()
 
