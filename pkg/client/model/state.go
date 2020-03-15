@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/spaolacci/murmur3"
 	"reflect"
-	"sort"
 	"unsafe"
 )
 
@@ -126,15 +125,16 @@ func (s State) allies() float64 {
 }
 
 // packs the state into the given buffer
-func (s *State) packedU32(buf []uint32) {
+func (s *State) packedU32(buf []uint32) []uint32 {
 	buf = buf[:0]
 	for coord, cell := range s.Grid {
 		b := uint32(coord.X) | uint32(coord.Y)<<8 | uint32(cell.Count)<<16 | uint32(cell.Race)<<24
 		buf = append(buf, b)
 	}
+	return buf
 }
 
-var hashBuffer = sortableU32{}
+var hashBuffer = []uint32{}
 
 // Hash gives the hash for the given state
 // NOT USABLE in parallel for now because hashBuffer is a global
@@ -143,11 +143,10 @@ func (s *State) Hash(race Race) uint64 {
 	// this will also leak memory but it's neglectable because it will leak for at much:
 	// N_bytes_per_entry * Max_entries = 4 * 256 * 256 = 256 Kb
 
-	hashBuffer = hashBuffer[:0]
-	s.packedU32(hashBuffer)
+	hashBuffer = s.packedU32(hashBuffer)
 	hashBuffer = append(hashBuffer, uint32(race))
 
-	sort.Sort(hashBuffer)
+	sortQuick(hashBuffer)
 	header := *(*reflect.SliceHeader)(unsafe.Pointer(&hashBuffer))
 	header.Len *= 4
 	header.Cap *= 4

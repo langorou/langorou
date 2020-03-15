@@ -27,12 +27,12 @@ const (
 
 type transpositionTable struct {
 	t                        map[uint64]result
-	hits, misses, collisions uint
+	hits, misses uint
 }
 
 func (t *transpositionTable) get(hash uint64, depth uint8) (result, bool) {
 	rec, ok := t.t[hash]
-	if ok && rec.depth >= depth {
+	if ok && rec.depth == depth {
 		t.hits += 1
 		return rec, true
 	}
@@ -54,15 +54,14 @@ func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, d
 }
 
 func (h *Heuristic) findBestCoup(state model.State, maxDepth uint8) (coup model.Coup, score float64) {
-	tt := &transpositionTable{map[uint64]result{}, 0, 0, 0}
+	tt := &transpositionTable{map[uint64]result{}, 0, 0}
 
 	for depth := uint8(1); depth <= maxDepth; depth++ {
 		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
 	}
-
 	// TODO: accept time limit and pass a channel
 
-	// log.Printf("misses: %d, hits: %d, hit ratio: %f, collisions: %d, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), tt.collisions, len(tt.t))
+	// log.Printf("misses: %d, hits: %d, hit ratio: %f, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), len(tt.t))
 	return coup, score
 }
 
