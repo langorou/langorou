@@ -125,29 +125,30 @@ func (s State) allies() float64 {
 	return float64(count)
 }
 
-type uint32sortable []uint32
+type sortableU32 []uint32
 
-func (u uint32sortable) Len() int {
+func (u sortableU32) Len() int {
 	return len(u)
 }
 
-func (u uint32sortable) Less(i, j int) bool {
+func (u sortableU32) Less(i, j int) bool {
 	return u[i] < u[j]
 }
 
-func (u uint32sortable) Swap(i, j int) {
+func (u sortableU32) Swap(i, j int) {
 	u[i], u[j] = u[j], u[i]
 }
 
-var hashBuffer = uint32sortable{}
+var hashBuffer = sortableU32{}
 
 // Hash gives the hash for the given state
 // NOT USABLE in parallel for now because hashBuffer is a global
-func (s *State) Hash() uint64 {
+func (s *State) Hash(race Race) uint64 {
 	// Trick to avoid allocating a buffer every time, we just reuse the same, caveat: not suitable for goroutines
 	// this will also leak memory but it's neglectable because it will leak for at much:
 	// N_bytes_per_entry * Max_entries = 4 * 256 * 256 = 256 Kb
 	hashBuffer = hashBuffer[:0]
+	hashBuffer = append(hashBuffer, uint32(race))
 	for coord, cell := range s.Grid {
 		b := uint32(coord.X) | uint32(coord.Y)<<8 | uint32(cell.Count)<<16 | uint32(cell.Race)<<24
 		hashBuffer = append(hashBuffer, b)

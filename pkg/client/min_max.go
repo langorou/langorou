@@ -2,7 +2,6 @@ package client
 
 import (
 	"github.com/langorou/langorou/pkg/client/model"
-	"log"
 	"math"
 )
 
@@ -59,7 +58,7 @@ func (h *Heuristic) findBestCoup(state model.State, maxDepth uint8) (coup model.
 
 	// TODO: accept time limit and pass a channel
 
-	log.Printf("misses: %d, hits: %d, hit ratio: %f, collisions: %d, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), tt.collisions, len(tt.t))
+	// log.Printf("misses: %d, hits: %d, hit ratio: %f, collisions: %d, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), tt.collisions, len(tt.t))
 	return coup, score
 }
 
@@ -67,7 +66,7 @@ func (h *Heuristic) findBestCoup(state model.State, maxDepth uint8) (coup model.
 func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race model.Race, alpha float64, beta float64, depth uint8, maxDepth uint8) (model.Coup, float64) {
 	bestCoup := model.Coup{}
 
-	hash := state.Hash()
+	hash := state.Hash(race)
 
 	rec, cached := tt.get(hash, depth)
 	if cached {
