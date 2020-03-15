@@ -15,18 +15,17 @@ func qsort(arr []uint32, low int, high int) {
 }
 
 func partition(arr []uint32, low int, high int) int {
-	pivot := arr[low]
-	i := low
+	pivot := low
 
-	for j := low + 1; j <= high; j++ {
-		if arr[j] < pivot {
-			arr[i], arr[j] = arr[j], arr[i]
-			i++
+	for i := low + 1; i <= high; i++ {
+		if arr[i] <= arr[low] {
+			pivot++
+			arr[pivot], arr[i] = arr[i], arr[pivot]
 		}
 	}
 
-	arr[i], arr[high] = arr[high], arr[i]
-	return i
+	arr[pivot], arr[low] = arr[low], arr[pivot]
+	return pivot
 }
 
 type sortableU32 []uint32
@@ -41,4 +40,14 @@ func (u sortableU32) Less(i, j int) bool {
 
 func (u sortableU32) Swap(i, j int) {
 	u[i], u[j] = u[j], u[i]
+}
+
+func classicSort(buf []uint32) {
+	for j := range buf {
+		for k := range buf {
+			if buf[j] < buf[k] && j > k {
+				buf[j], buf[k] = buf[k], buf[j]
+			}
+		}
+	}
 }
