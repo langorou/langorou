@@ -70,7 +70,7 @@ func generateCoups(s model.State, race model.Race) []model.Coup {
 			// Add the move to all the previous coups
 			for _, coup := range all[:max] {
 				// We have to make a copy here otherwise we will reuse the same array which will cause issues
-				newCoup := make(model.Coup, len(coup) + 1)
+				newCoup := make(model.Coup, len(coup)+1)
 				copy(newCoup, coup)
 				newCoup[len(coup)] = move
 

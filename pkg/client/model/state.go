@@ -2,6 +2,9 @@ package model
 
 import (
 	"fmt"
+	"github.com/spaolacci/murmur3"
+	"reflect"
+	"unsafe"
 )
 
 type Race uint8
@@ -119,4 +122,35 @@ func (s State) allies() float64 {
 	}
 
 	return float64(count)
+}
+
+// packs the state into the given buffer
+func (s *State) packedU32(buf []uint32) []uint32 {
+	buf = buf[:0]
+	for coord, cell := range s.Grid {
+		b := uint32(coord.X) | uint32(coord.Y)<<8 | uint32(cell.Count)<<16 | uint32(cell.Race)<<24
+		buf = append(buf, b)
+	}
+	return buf
+}
+
+var hashBuffer = sortableU32{}
+
+// Hash gives the hash for the given state
+// NOT USABLE in parallel for now because hashBuffer is a global
+func (s *State) Hash(race Race) uint64 {
+	// Trick to avoid allocating a buffer every time, we just reuse the same, caveat: not suitable for goroutines
+	// this will also leak memory but it's neglectable because it will leak for at much:
+	// N_bytes_per_entry * Max_entries = 4 * 256 * 256 = 256 Kb
+
+	hashBuffer = s.packedU32(hashBuffer)
+	hashBuffer = append(hashBuffer, uint32(race))
+
+	sortQuick(hashBuffer)
+	header := *(*reflect.SliceHeader)(unsafe.Pointer(&hashBuffer))
+	header.Len *= 4
+	header.Cap *= 4
+	raw := *(*[]byte)(unsafe.Pointer(&header))
+
+	return murmur3.Sum64(raw)
 }
