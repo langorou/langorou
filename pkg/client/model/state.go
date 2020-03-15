@@ -3,6 +3,9 @@ package model
 import (
 	"fmt"
 	"github.com/spaolacci/murmur3"
+	"reflect"
+	"sort"
+	"unsafe"
 )
 
 type Race uint8
@@ -122,7 +125,22 @@ func (s State) allies() float64 {
 	return float64(count)
 }
 
-var hashBuffer = []byte{}
+type uint32sortable []uint32
+
+func (u uint32sortable) Len() int {
+	return len(u)
+}
+
+func (u uint32sortable) Less(i, j int) bool {
+	return u[i] < u[j]
+}
+
+func (u uint32sortable) Swap(i, j int) {
+	u[i], u[j] = u[j], u[i]
+}
+
+var hashBuffer = uint32sortable{}
+
 
 // Hash gives the hash for the given state
 // NOT USABLE in parallel for now because hashBuffer is a global
@@ -132,8 +150,16 @@ func (s *State) Hash() uint64 {
 	// N_bytes_per_entry * Max_entries = 4 * 256 * 256 = 256 Kb
 	hashBuffer = hashBuffer[:0]
 	for coord, cell := range s.Grid {
-		hashBuffer = append(hashBuffer, coord.X, coord.Y, cell.Count, uint8(cell.Race))
+		b := uint32(coord.X) | uint32(coord.Y) << 8 | uint32(cell.Count) << 16 | uint32(cell.Race) << 24
+		hashBuffer = append(hashBuffer,b)
 	}
 
-	return murmur3.Sum64(hashBuffer)
+
+	sort.Sort(hashBuffer)
+	header := *(*reflect.SliceHeader)(unsafe.Pointer(&hashBuffer))
+	header.Len *= 4
+	header.Cap *= 4
+	raw := *(*[]byte)(unsafe.Pointer(&header))
+
+	return murmur3.Sum64(raw)
 }
