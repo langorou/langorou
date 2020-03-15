@@ -111,9 +111,6 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race mo
 		f = math.Min
 	}
 
-	// Sort by killer moves
-	// model.SortCoupsByQuickScore(coups, state)
-
 	// for each generated coup, we compute the list of potential outcomes and compute an average score
 	// weighted by the probabilities of these potential outcomes
 	for _, coup := range coups {
