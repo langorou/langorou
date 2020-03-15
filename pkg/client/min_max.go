@@ -2,6 +2,7 @@ package client
 
 import (
 	"github.com/langorou/langorou/pkg/client/model"
+	"log"
 	"math"
 )
 
@@ -10,36 +11,66 @@ const (
 	negInfinity = -math.MaxFloat64
 )
 
-type save struct {
+type resultType uint8
+
+type result struct {
 	depth uint8
 	score float64
-	typ   uint8
+	typ   resultType
 	coup  model.Coup
 }
 
 const (
-	lower uint8 = iota
+	lower resultType = iota
 	upper
 	exact
 )
 
+type transpositionTable struct {
+	t map[uint64]result
+	hits, misses, collisions uint
+}
+
+func (t *transpositionTable) get(hash uint64, depth uint8) (result, bool) {
+	rec, ok := t.t[hash]
+	if ok && rec.depth >= depth {
+		t.hits += 1
+		return rec, true
+	}
+
+	t.misses += 1
+
+	return rec, false
+}
+
+func (t *transpositionTable) save(hash uint64, s result) {
+	if _, ok := t.t[hash]; ok {
+		t.collisions += 1
+	}
+	t.t[hash] = s
+}
+
 func (h *Heuristic) findBestCoup(state model.State, maxDepth uint8) (coup model.Coup, score float64) {
-	tt := map[uint64]save{}
+	tt := &transpositionTable{map[uint64]result{}, 0,0, 0}
 
 	for depth := uint8(1); depth <= maxDepth; depth++ {
 		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
 	}
 
+	// TODO: accept time limit and pass a channel
+
+	log.Printf("misses: %d, hits: %d, hit ratio: %f, collisions: %d, entries: %d", tt.misses, tt.hits, float64(tt.hits) / (float64(tt.hits + tt.misses)), tt.collisions, len(tt.t))
 	return coup, score
 }
 
 // alphabeta computes the best coup going at most at depth depth
-func (h *Heuristic) alphabeta(tt map[uint64]save, state model.State, race model.Race, alpha float64, beta float64, depth uint8, maxDepth uint8) (model.Coup, float64) {
+func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race model.Race, alpha float64, beta float64, depth uint8, maxDepth uint8) (model.Coup, float64) {
 	bestCoup := model.Coup{}
 
 	hash := state.Hash()
 
-	if rec, ok := tt[hash]; ok && rec.depth == depth {
+	rec, cached := tt.get(hash, depth)
+	if  cached {
 		if rec.typ == exact {
 			return rec.coup, rec.score
 		} else if rec.typ == lower {
@@ -55,20 +86,20 @@ func (h *Heuristic) alphabeta(tt map[uint64]save, state model.State, race model.
 
 	if depth >= maxDepth { // Max depth reached
 		score := h.scoreState(state)
-		tt[hash] = save{coup: bestCoup, score: score, depth: depth, typ: exact}
+		tt.save(hash , result{coup: bestCoup, score: score, depth: depth, typ: exact})
 		return bestCoup, score
 	}
 
 	coups := generateCoups(state, race)
 	if len(coups) == 0 { // or no more moves found
 		score := h.scoreState(state)
-		tt[hash] = save{coup: bestCoup, score: score, depth: depth, typ: exact}
+		tt.save(hash , result{coup: bestCoup, score: score, depth: depth, typ: exact})
 		return bestCoup, h.scoreState(state)
 	}
 
-	if rec, ok := tt[hash]; ok && len(rec.coup) != 0 {
+	if cached && len(rec.coup) != 0 {
 		// Put the current move first
-		// TODO: duplicated
+		// TODO: the move will be duplicated
 		coups = append([]model.Coup{rec.coup}, coups...)
 	}
 
@@ -119,14 +150,14 @@ func (h *Heuristic) alphabeta(tt map[uint64]save, state model.State, race model.
 		}
 	}
 
-	s := save{depth: depth, coup: bestCoup, score: value, typ: exact}
+	s := result{depth: depth, coup: bestCoup, score: value, typ: exact}
 	if alpha >= value {
 		s.typ = lower
 	} else if value >= beta {
 		s.typ = upper
 	}
 
-	tt[hash] = s
+	tt.save(hash, s)
 
 	return bestCoup, value
 }
