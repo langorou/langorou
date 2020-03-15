@@ -5,9 +5,11 @@ import (
 	"github.com/langorou/langorou/pkg/client/model"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 const testDepth = 5
+const testTimeout = 500 * time.Millisecond
 
 var testHeuristic = NewHeuristic(NewDefaultHeuristicParameters())
 
@@ -26,11 +28,15 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 8)
 
 		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
-		assert.Equal(t, model.Coup{model.Move{
+		expected := model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     8,
 			End:   model.Coordinates{X: 2, Y: 0},
-		}}, coup)
+		}}
+		assert.Equal(t, expected, coup)
+
+		coupWithTimeout, _ := testHeuristic.findBestCoupWithTimeout(startState, testTimeout)
+		assert.Equal(t, expected, coupWithTimeout)
 	})
 
 	t.Run("case2", func(t *testing.T) {
@@ -48,11 +54,15 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 8, Y: 8}, model.Enemy, 8)
 
 		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
-		assert.Equal(t, model.Coup{model.Move{
+		expected := model.Coup{model.Move{
 			Start: model.Coordinates{X: 0, Y: 0},
 			N:     8,
 			End:   model.Coordinates{X: 1, Y: 0},
-		}}, coup)
+		}}
+		assert.Equal(t, expected , coup)
+
+		coupWithTimeout, _ := testHeuristic.findBestCoupWithTimeout(startState, testTimeout)
+		assert.Equal(t, expected, coupWithTimeout)
 	})
 
 	t.Run("case3", func(t *testing.T) {
@@ -69,11 +79,15 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 7, Y: 4}, model.Enemy, 75)
 
 		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
-		assert.Equal(t, model.Coup{model.Move{
+		expected := model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     68,
 			End:   model.Coordinates{X: 2, Y: 2},
-		}}, coup)
+		}}
+		assert.Equal(t, expected , coup)
+
+		coupWithTimeout, _ := testHeuristic.findBestCoupWithTimeout(startState, testTimeout)
+		assert.Equal(t, expected, coupWithTimeout)
 	})
 }
 

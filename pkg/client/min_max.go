@@ -1,8 +1,11 @@
 package client
 
 import (
-	"github.com/langorou/langorou/pkg/client/model"
+	"context"
 	"math"
+	"time"
+
+	"github.com/langorou/langorou/pkg/client/model"
 )
 
 const (
@@ -53,24 +56,49 @@ func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, d
 	t.t[hash] = s
 }
 
+func (h *Heuristic) findBestCoupWithTimeout(state model.State, timeout time.Duration) (coup model.Coup, score float64) {
+	tt := &transpositionTable{map[uint64]result{}, 0, 0}
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		for depth := uint8(1); ; depth++ {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				coup, score = h.alphabeta(ctx, tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
+			}
+		}
+	}()
+
+	<-time.After(timeout)
+	cancel()
+	return
+}
+
 func (h *Heuristic) findBestCoup(state model.State, maxDepth uint8) (coup model.Coup, score float64) {
 	tt := &transpositionTable{map[uint64]result{}, 0, 0}
 
 	for depth := uint8(1); depth <= maxDepth; depth++ {
-		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
+		coup, score = h.alphabeta(context.Background(), tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
 	}
-	// TODO: accept time limit and pass a channel
-
-	// log.Printf("misses: %d, hits: %d, hit ratio: %f, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), len(tt.t))
 	return coup, score
 }
 
-// alphabeta computes the best coup going at most at depth depth
-func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race model.Race, alpha float64, beta float64, depth uint8, maxDepth uint8) (model.Coup, float64) {
+// alphabeta computes the best coup going at most at depth maxDepth
+func (h *Heuristic) alphabeta(ctx context.Context, tt *transpositionTable, state model.State, race model.Race, alpha float64, beta float64, depth uint8, maxDepth uint8) (model.Coup, float64) {
 	bestCoup := model.Coup{}
+	// Check if our time limit has expired
+	select {
+	case <-ctx.Done():
+		// This won't be used anyway
+		return bestCoup, 0
+	default:
+	}
 
 	hash := state.Hash(race)
 
+	// Lookup the transposition table
 	rec, cached := tt.get(hash, depth)
 	if cached {
 		if rec.typ == exact {
@@ -121,18 +149,14 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race mo
 		outcomes := applyCoup(state, race, coup, h.WinThreshold)
 
 		score := 0.
-		// log.Printf("depth: %d", depth)
 		for _, outcome := range outcomes {
-			_, tmpScore := h.alphabeta(tt, outcome.s, race.Opponent(), alpha, beta, depth+1, maxDepth)
+			_, tmpScore := h.alphabeta(ctx, tt, outcome.s, race.Opponent(), alpha, beta, depth+1, maxDepth)
 			score += tmpScore * outcome.probability
 		}
-
-		// log.Printf("cumulative: %f, findBestCoup score: %f at depth: %d for race: %v and coup: %+v", state.CumulativeScore, score, depth, race, coup)
 
 		if f(value, score) == score { // score >= value if max playing or value >= score if min playing
 			value = score
 			bestCoup = coup
-			// log.Printf("better value found %f: depth: %d, race: %v", value, depth, race)
 		}
 
 		// Check for possible cuts
