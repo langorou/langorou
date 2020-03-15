@@ -26,7 +26,7 @@ const (
 )
 
 type transpositionTable struct {
-	t                        map[uint64]result
+	t            map[uint64]result
 	hits, misses uint
 }
 
@@ -127,7 +127,7 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race mo
 			score += tmpScore * outcome.probability
 		}
 
-		// log.Printf("cumulative: %f, findBestCoup score: %f at depth: %d for race: %v and coup: %+v, grid: %+v, potential: %+v", state.cumScore, score, depth, race, coup, state.grid, outcomes)
+		// log.Printf("cumulative: %f, findBestCoup score: %f at depth: %d for race: %v and coup: %+v", state.CumulativeScore, score, depth, race, coup)
 
 		if f(value, score) == score { // score >= value if max playing or value >= score if min playing
 			value = score

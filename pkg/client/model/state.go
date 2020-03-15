@@ -134,7 +134,7 @@ func (s *State) packedU32(buf []uint32) []uint32 {
 	return buf
 }
 
-var hashBuffer = []uint32{}
+var hashBuffer = sortableU32{}
 
 // Hash gives the hash for the given state
 // NOT USABLE in parallel for now because hashBuffer is a global

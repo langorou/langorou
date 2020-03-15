@@ -18,7 +18,7 @@ func partition(arr []uint32, low int, high int) int {
 	pivot := arr[low]
 	i := low
 
-	for j := low; j <= high; j++ {
+	for j := low + 1; j <= high; j++ {
 		if arr[j] < pivot {
 			arr[i], arr[j] = arr[j], arr[i]
 			i++
