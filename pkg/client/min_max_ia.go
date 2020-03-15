@@ -20,6 +20,7 @@ func NewMinMaxIA(depth uint8) *MinMaxIA {
 }
 
 func (m *MinMaxIA) Play(state model.State) model.Coup {
+	// TODO: use findBestCoupWithTimeout
 	coup, score := m.heuristic.findBestCoup(state, m.depth)
 	log.Printf("MinMaxIA computed a coup with score: %f", score)
 	return coup
