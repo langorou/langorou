@@ -21,6 +21,14 @@ build:
 auto:
 	${GOCMD} run cmd/auto/main.go -rand
 
+.PHONY: tournoi
+tournoi:
+	${GOCMD} run cmd/tournoi/main.go
+
+.PHONY: replay
+replay:
+	${GOCMD} run cmd/replay/main.go -replay
+
 .PHONY: test
 test:
 	${GOCMD} test -v ${pkg}

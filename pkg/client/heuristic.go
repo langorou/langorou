@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/langorou/langorou/pkg/client/model"
@@ -27,6 +28,13 @@ type HeuristicParameters struct {
 	WinThreshold float64
 }
 
+func (hp *HeuristicParameters) String() string {
+	return fmt.Sprintf(
+		"c%3.2f_b%3.2f_nb%3.2f_cs%4.3f_ws%3.2e_lowr%3.2f_wt%3.2f",
+		hp.Counts, hp.Battles, hp.NeutralBattles, hp.CumScore, hp.WinScore, hp.LoseOverWinRatio, hp.WinThreshold,
+	)
+}
+
 // NewDefaultHeuristicParameters creates heuristic parameters
 func NewDefaultHeuristicParameters() HeuristicParameters {
 	return HeuristicParameters{
@@ -43,6 +51,10 @@ func NewDefaultHeuristicParameters() HeuristicParameters {
 // Heuristic represents a heuristic
 type Heuristic struct {
 	HeuristicParameters
+}
+
+func (h *Heuristic) String() string {
+	return h.HeuristicParameters.String()
 }
 
 // NewHeuristic

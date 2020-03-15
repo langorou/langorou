@@ -1,8 +1,10 @@
 package client
 
 import (
-	"github.com/langorou/langorou/pkg/client/model"
+	"fmt"
 	"log"
+
+	"github.com/langorou/langorou/pkg/client/model"
 )
 
 type MinMaxIA struct {
@@ -23,4 +25,8 @@ func (m *MinMaxIA) Play(state model.State) model.Coup {
 	coup, score := m.heuristic.findBestCoup(state, m.depth)
 	log.Printf("MinMaxIA computed a coup with score: %f", score)
 	return coup
+}
+
+func (m *MinMaxIA) Name() string {
+	return fmt.Sprintf("min_max_%d_%s", m.depth, m.heuristic.String())
 }

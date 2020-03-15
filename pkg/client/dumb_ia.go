@@ -1,10 +1,11 @@
 package client
 
 import (
-	"github.com/langorou/langorou/pkg/client/model"
 	"log"
 	"math/rand"
 	"time"
+
+	"github.com/langorou/langorou/pkg/client/model"
 )
 
 type DumbIA struct{}
@@ -27,4 +28,8 @@ func (dia *DumbIA) Play(state model.State) model.Coup {
 	}
 
 	return coups[rand.Intn(len(coups))]
+}
+
+func (dia *DumbIA) Name() string {
+	return "dumb_ia"
 }

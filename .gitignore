@@ -19,3 +19,6 @@
 .idea/
 
 bin/
+
+# output of tournoi/main
+out/
