@@ -72,6 +72,24 @@ func (s State) Copy(advanceTime bool) State {
 	return State{Grid: newGrid, Height: s.Height, Width: s.Width, CumulativeScore: score, time: time}
 }
 
+// PPrint pretty prints a state
+func (s State) PPrint() {
+	raceRepr := []string{"N", "A", "E"}
+	fmt.Println("Grid: ")
+	for row := uint8(0); row < s.Height; row++ {
+		for col := uint8(0); col < s.Width; col++{
+			coord := Coordinates{X: col, Y: row}
+			cell, ok := s.Grid[coord]
+			if ok && !cell.IsEmpty(){
+				fmt.Printf("| %3.d%s ", cell.Count, raceRepr[cell.Race])
+			} else {
+				fmt.Print("|      ")
+			}
+		}
+		fmt.Println("|")
+	}
+}
+
 func (s *State) SetCell(pos Coordinates, race Race, count uint8) {
 	// If we set a cell to 0, remove it except if it's neutral (because the HUM message from the server does this)
 	if count == 0 && race != Neutral {
@@ -89,10 +107,14 @@ func (s *State) IncreaseCell(pos Coordinates, count uint8) {
 	s.Grid[pos] = c
 }
 
-func (s *State) DecreaseCell(pos Coordinates, count uint8) {
+func (s *State) DecreaseCell(pos Coordinates, count uint8, race Race) {
 	c, ok := s.Grid[pos]
 	if !ok {
 		panic(fmt.Sprintf("Tried to decrease population at non existing cell: %+v", pos))
+	}
+
+	if c.Race != race {
+		panic(fmt.Sprintf("Invalid move ! Race: %v, tried to move units of race: %v", race, c.Race))
 	}
 
 	if c.Count == count {

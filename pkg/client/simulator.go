@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"github.com/langorou/langorou/pkg/client/model"
 	"sort"
 )
@@ -30,17 +29,11 @@ func applyCoup(origState model.State, race model.Race, coup model.Coup, winThres
 
 		// Move the start populations on each possible states
 		for _, state := range states {
-			state.s.DecreaseCell(move.Start, move.N)
+			state.s.DecreaseCell(move.Start, move.N, race)
 		}
 
 		// If the target cell is no more the same, stop aggregating and compute the possible states
 		if move.End != lastEndCoordinates {
-
-			// Ensure that the move is legal
-			if origState.Grid[move.Start].Race != race {
-				panic(fmt.Sprintf("Race: %+v, tried to move race: %+v, illegal move", race, origState.Grid[move.Start].Race))
-			}
-
 			states = applyMoveOnPossibleStates(states, race, lastEndCoordinates, count, winThreshold)
 			count = 0
 		}
@@ -90,7 +83,7 @@ func applyMove(s model.State, race model.Race, target model.Coordinates, count u
 
 	// Fight with the enemy or neutral
 	// We use a float here for later computation
-	var isNeutral uint8 = 0
+	var isNeutral float64 = 0
 	if endCell.Race == model.Neutral {
 		isNeutral = 1
 	}
@@ -100,7 +93,7 @@ func applyMove(s model.State, race model.Race, target model.Coordinates, count u
 	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
 	if P >= winThreshold {
 		// Consider it a win situation given the probability
-		endCount := uint8(P*float64(count) + float64(isNeutral*endCell.Count)*P)
+		endCount := uint8(P*float64(count) + isNeutral*float64(endCell.Count)*P)
 		s.SetCell(target, race, endCount)
 		return []potentialState{{s: s, probability: 1}}
 	} else if P < 1-winThreshold {
@@ -116,7 +109,7 @@ func applyMove(s model.State, race model.Race, target model.Coordinates, count u
 		target,
 		race,
 		// each ally has probability P to survive. Against neutral, we have a probability P to convert them
-		uint8(P*float64(count)+float64(isNeutral*endCell.Count)*P),
+		uint8(P*float64(count)+isNeutral*float64(endCell.Count)*P),
 	)
 
 	lossState := s.Copy(false)
