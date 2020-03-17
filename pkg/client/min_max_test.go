@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"github.com/langorou/langorou/pkg/client/model"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"testing"
 )
 
-const testDepth = 5
+const testDepth = 8
 
 var testHeuristic = NewHeuristic(NewDefaultHeuristicParameters())
 
@@ -29,7 +30,48 @@ func TestMinMax(t *testing.T) {
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     8,
-			End:   model.Coordinates{X: 2, Y: 0},
+			// Or End: model.Coordinates{X: 1, Y:0 },
+			End: model.Coordinates{X: 0, Y: 2},
+		}}, coup)
+		log.Printf("proba: %f: %f", winProbability(8, 12, false), winProbability(12, 8, false))
+		log.Printf("proba: %f: %f", winProbability(14, 22, false), winProbability(22, 14, false))
+	})
+
+	t.Run("case1.1", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// 10N | XXX | 14E
+		// ... | XXX | XXX
+		// 12A | XXX | XXX
+
+		startState := model.NewState(3, 3)
+		startState.SetCell(model.Coordinates{}, model.Neutral, 10)
+		startState.SetCell(model.Coordinates{X: 2}, model.Enemy, 14)
+		startState.SetCell(model.Coordinates{X: 0, Y: 2}, model.Ally, 12)
+
+		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
+		assert.Equal(t, model.Coup{model.Move{
+			Start: model.Coordinates{X: 0, Y: 2},
+			N:     12,
+			End:   model.Coordinates{X: 0, Y: 1},
+		}}, coup)
+	})
+
+	t.Run("case1.2", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// 10N | XXX | 14A
+		// XXX | 12E | XXX
+		// XXX | XXX | XXX
+
+		startState := model.NewState(3, 3)
+		startState.SetCell(model.Coordinates{}, model.Neutral, 10)
+		startState.SetCell(model.Coordinates{X: 2}, model.Ally, 14)
+		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Enemy, 12)
+
+		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
+		assert.Equal(t, model.Coup{model.Move{
+			Start: model.Coordinates{X: 2, Y: 0},
+			N:     14,
+			End:   model.Coordinates{X: 1, Y: 1},
 		}}, coup)
 	})
 
@@ -125,6 +167,7 @@ func TestSimulationAllyNeutral(t *testing.T) {
 	t.Run("minmax decision", func(t *testing.T) {
 		s := startState.Copy(false)
 		s.SetCell(model.Coordinates{X: 1}, model.Enemy, 15)
+		assert.False(t, s.GameOver())
 		coup, _ := testHeuristic.findBestCoup(s, testDepth)
 
 		// Probability 5/6 of winning if we attack the enemy directly

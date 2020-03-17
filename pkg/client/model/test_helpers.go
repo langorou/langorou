@@ -1,6 +1,6 @@
 package model
 
-func GenerateComplicatedState() State {
+func GenerateComplicatedState() *State {
 	s := NewState(10, 10)
 	s.SetCell(Coordinates{X: 1, Y: 1}, Ally, 68)
 	s.SetCell(Coordinates{X: 2, Y: 2}, Neutral, 7)
@@ -18,7 +18,7 @@ func GenerateComplicatedState() State {
 	return s
 }
 
-func GenerateSimpleState() State {
+func GenerateSimpleState() *State {
 	s := NewState(5, 5)
 	s.SetCell(Coordinates{X: 0, Y: 0}, Ally, 68)
 	s.SetCell(Coordinates{X: 4, Y: 2}, Neutral, 4)

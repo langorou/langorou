@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"github.com/langorou/langorou/pkg/client/model"
 	"math"
 )
@@ -31,6 +32,7 @@ type transpositionTable struct {
 }
 
 func (t *transpositionTable) get(hash uint64, depth uint8) (result, bool) {
+	return result{}, false
 	rec, ok := t.t[hash]
 	if ok && rec.depth == depth {
 		t.hits += 1
@@ -43,6 +45,7 @@ func (t *transpositionTable) get(hash uint64, depth uint8) (result, bool) {
 }
 
 func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, depth uint8, alpha float64, beta float64) {
+	return
 	s := result{coup: coup, score: value, depth: depth, typ: exact}
 	if alpha >= value {
 		s.typ = lower
@@ -53,11 +56,15 @@ func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, d
 	t.t[hash] = s
 }
 
-func (h *Heuristic) findBestCoup(state model.State, maxDepth uint8) (coup model.Coup, score float64) {
+func (h *Heuristic) findBestCoup(state *model.State, maxDepth uint8) (coup model.Coup, score float64) {
 	tt := &transpositionTable{map[uint64]result{}, 0, 0}
 
 	for depth := uint8(1); depth <= maxDepth; depth++ {
 		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
+		fmt.Printf("Best coup: %+v, for score: %f found at depth: %d", coup, score, depth)
+		fmt.Println("")
+		fmt.Println("")
+		fmt.Println("")
 	}
 	// TODO: accept time limit and pass a channel
 
@@ -66,7 +73,7 @@ func (h *Heuristic) findBestCoup(state model.State, maxDepth uint8) (coup model.
 }
 
 // alphabeta computes the best coup going at most at depth depth
-func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race model.Race, alpha float64, beta float64, depth uint8, maxDepth uint8) (model.Coup, float64) {
+func (h *Heuristic) alphabeta(tt *transpositionTable, state *model.State, race model.Race, alpha float64, beta float64, depth uint8, maxDepth uint8) (model.Coup, float64) {
 	bestCoup := model.Coup{}
 
 	hash := state.Hash(race)
@@ -86,7 +93,7 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race mo
 		}
 	}
 
-	if depth >= maxDepth { // Max depth reached
+	if depth >= maxDepth || state.GameOver() { // Max depth reached or game is over
 		value := h.scoreState(state)
 		tt.save(hash, bestCoup, value, depth, alpha, beta)
 		return bestCoup, value
@@ -127,8 +134,6 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race mo
 			score += tmpScore * outcome.probability
 		}
 
-		// log.Printf("cumulative: %f, findBestCoup score: %f at depth: %d for race: %v and coup: %+v", state.CumulativeScore, score, depth, race, coup)
-
 		if f(value, score) == score { // score >= value if max playing or value >= score if min playing
 			value = score
 			bestCoup = coup
@@ -138,13 +143,13 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state model.State, race mo
 		// Check for possible cuts
 		if race == model.Enemy {
 			// alpha cut
-			if alpha >= value {
+			if alpha > value {
 				break
 			}
 			beta = f(beta, value)
 		} else {
 			// beta cut
-			if value >= beta {
+			if value > beta {
 				break
 			}
 			alpha = f(alpha, value)
