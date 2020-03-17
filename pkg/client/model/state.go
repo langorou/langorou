@@ -71,7 +71,6 @@ func (s *State) Copy(advanceTime bool) *State {
 	score := s.CumulativeScore
 	time := s.time
 	if advanceTime {
-		// TODO: take into account enemies as well ?
 		score += (1 - float64(s.time)/1000) * (float64(s.allies) - float64(s.enemies))
 		time += 1
 	}
