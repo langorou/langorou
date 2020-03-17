@@ -16,7 +16,7 @@ func NewDumbIA() *DumbIA {
 	return &DumbIA{}
 }
 
-func (dia *DumbIA) Play(state model.State) model.Coup {
+func (dia *DumbIA) Play(state *model.State) model.Coup {
 	// Simulate computation
 	time.Sleep(time.Second)
 

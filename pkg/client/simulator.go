@@ -6,12 +6,12 @@ import (
 )
 
 type potentialState struct {
-	s           model.State
+	s           *model.State
 	probability float64
 }
 
 // applyCoup computes the possibles states after applying a Coup (a list of moves)
-func applyCoup(origState model.State, race model.Race, coup model.Coup, winThreshold float64) []potentialState {
+func applyCoup(origState *model.State, race model.Race, coup model.Coup, winThreshold float64) []potentialState {
 	// TODO improve this function, it's not really efficient, some moves are
 
 	// Start with the current state with probability 1
@@ -29,7 +29,7 @@ func applyCoup(origState model.State, race model.Race, coup model.Coup, winThres
 
 		// Move the start populations on each possible states
 		for _, state := range states {
-			state.s.DecreaseCell(move.Start, move.N, race)
+			state.s.DecreaseCell(move.Start, race, move.N)
 		}
 
 		// If the target cell is no more the same, stop aggregating and compute the possible states
@@ -69,7 +69,7 @@ func applyMoveOnPossibleStates(states []potentialState, race model.Race, target 
 
 // applyMove computes the possible next states from a given state and ONLY ONE move
 // XXX: WARNING it re-uses the given state, so it will become stale after
-func applyMove(s model.State, race model.Race, target model.Coordinates, count uint8, winThreshold float64) []potentialState {
+func applyMove(s *model.State, race model.Race, target model.Coordinates, count uint8, winThreshold float64) []potentialState {
 
 	endCell := s.Grid[target]
 
@@ -99,7 +99,7 @@ func applyMove(s model.State, race model.Race, target model.Coordinates, count u
 	} else if P < 1-winThreshold {
 		// Consider it a lose situation given the probability
 		endCount := uint8((1 - P) * float64(endCell.Count))
-		s.SetCell(target, race, endCount)
+		s.SetCell(target, endCell.Race, endCount)
 		return []potentialState{{s: s, probability: 1}}
 	}
 

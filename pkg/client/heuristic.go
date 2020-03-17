@@ -41,10 +41,10 @@ func NewDefaultHeuristicParameters() HeuristicParameters {
 		Counts:           1,
 		Battles:          0.5,
 		NeutralBattles:   0.5,
-		CumScore:         0.001,
+		CumScore:         0.0001,
 		WinScore:         1e10,
-		LoseOverWinRatio: 1.2,
-		WinThreshold:     0.8,
+		LoseOverWinRatio: 1,
+		WinThreshold:     1.,
 	}
 }
 
@@ -65,7 +65,7 @@ func NewHeuristic(params HeuristicParameters) Heuristic {
 // generateCoups generates coups for a given state and a given race
 // While a player _can_ make multiple moves within a coup, for now this function only
 // returns individual moves.
-func generateCoups(s model.State, race model.Race) []model.Coup {
+func generateCoups(s *model.State, race model.Race) []model.Coup {
 	all := []model.Coup{}
 
 	for coord, cell := range s.Grid {
@@ -73,7 +73,7 @@ func generateCoups(s model.State, race model.Race) []model.Coup {
 			continue
 		}
 
-		moves := generateMovesFromCell(s, coord, cell)
+		moves := generateMovesFromCell(s.Width, s.Height, coord, cell)
 		max := len(all)
 		for _, move := range moves {
 			// Add the move alone
@@ -100,25 +100,25 @@ type transformation struct {
 	Y int8
 }
 
-func transform(s model.State, c model.Coordinates, t transformation) (res model.Coordinates, ok bool) {
-	if s.Width == 0 {
+func transform(width, height uint8, c model.Coordinates, t transformation) (res model.Coordinates, ok bool) {
+	if width == 0 {
 		return c, false
 	}
 
 	xRes := uint8(int8(c.X) + t.X)
-	if (xRes < 0) || (xRes >= s.Width) {
+	if (xRes < 0) || (xRes >= width) {
 		return c, false
 	}
 
 	yRes := uint8(int8(c.Y) + t.Y)
-	if (yRes < 0) || (yRes >= s.Height) {
+	if (yRes < 0) || (yRes >= height) {
 		return c, false
 	}
 
 	return model.Coordinates{X: xRes, Y: yRes}, true
 }
 
-func generateMovesFromCell(s model.State, source model.Coordinates, cell model.Cell) []model.Move {
+func generateMovesFromCell(width, height uint8, source model.Coordinates, cell model.Cell) []model.Move {
 	// Simplification: as long as we are doing one move per turn, we are better
 	// off moving all units and not a subset.
 	// This is not true anymore if we do multiple moves per turn, as keeping
@@ -140,7 +140,7 @@ func generateMovesFromCell(s model.State, source model.Coordinates, cell model.C
 	}
 
 	for _, t := range transforms {
-		target, ok := transform(s, source, t)
+		target, ok := transform(width, height, source, t)
 		if !ok {
 			continue
 		}
@@ -196,7 +196,7 @@ func (sc *scoreCounter) add(race model.Race, score float64) {
 }
 
 // scoreState is the heuristic for our IA
-func (h *Heuristic) scoreState(s model.State) float64 {
+func (h *Heuristic) scoreState(s *model.State) float64 {
 
 	// different counts participating in the heuristic
 	counts := scoreCounter{}

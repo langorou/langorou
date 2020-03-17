@@ -7,7 +7,7 @@ import (
 
 // Game implements the Client interface using a TCP server
 type Game struct {
-	state      model.State
+	state      *model.State
 	playerName string
 	ia         IA
 }
