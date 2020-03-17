@@ -10,8 +10,6 @@ func GenerateComplicatedState() *State {
 	s.SetCell(Coordinates{X: 5, Y: 8}, Neutral, 4)
 	s.SetCell(Coordinates{X: 5, Y: 9}, Neutral, 18)
 	s.SetCell(Coordinates{X: 6, Y: 2}, Ally, 68)
-	s.SetCell(Coordinates{X: 6, Y: 8}, Ally, 6)
-	s.SetCell(Coordinates{X: 7, Y: 4}, Enemy, 25)
 	s.SetCell(Coordinates{X: 8, Y: 1}, Enemy, 2)
 	s.SetCell(Coordinates{X: 9, Y: 0}, Enemy, 53)
 

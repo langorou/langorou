@@ -31,10 +31,8 @@ type transpositionTable struct {
 }
 
 func (t *transpositionTable) get(hash uint64, depth uint8) (result, bool) {
-	// TODO: removeme
-	return result{}, false
 	rec, ok := t.t[hash]
-	if ok && rec.depth == depth {
+	if ok && rec.depth >= depth {
 		t.hits += 1
 		return rec, true
 	}
@@ -45,8 +43,6 @@ func (t *transpositionTable) get(hash uint64, depth uint8) (result, bool) {
 }
 
 func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, depth uint8, alpha float64, beta float64) {
-	// TODO: removeme
-	return
 	s := result{coup: coup, score: value, depth: depth, typ: exact}
 	if alpha > value {
 		s.typ = lower
@@ -58,13 +54,14 @@ func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, d
 }
 
 func (h *Heuristic) findBestCoup(state *model.State, maxDepth uint8) (coup model.Coup, score float64) {
-	tt := &transpositionTable{map[uint64]result{}, 0, 0}
-
 	for depth := uint8(1); depth <= maxDepth; depth++ {
-		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
+		tt := &transpositionTable{map[uint64]result{}, 0, 0}
+		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 1, depth+1)
+		// log.Printf("misses: %d, hits: %d, hit ratio: %f, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), len(tt.t))
 	}
 
-	// log.Printf("misses: %d, hits: %d, hit ratio: %f, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), len(tt.t))
+	// TODO: use transposition table to use the best move found at previous depth
+
 	return coup, score
 }
 
@@ -100,14 +97,6 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state *model.State, race m
 		value := h.scoreState(state)
 		tt.save(hash, bestCoup, value, depth, alpha, beta)
 		return bestCoup, value
-	}
-
-	if cached && len(rec.coup) != 0 {
-		// Put the current move first
-		// TODO: the move will be duplicated
-		tmp := coups[0]
-		coups[0] = rec.coup
-		coups = append(coups, tmp)
 	}
 
 	// Chose if we want to maximize (us) or minimize (enemy) our score

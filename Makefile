@@ -35,7 +35,7 @@ test:
 
 .PHONY: benchmark
 benchmark:
-	${GOCMD} test -run=^$$ -bench=${bench_name} -v -cpuprofile ${profile} -benchmem -benchtime=${bench_time} -timeout=30s ${pkg}
+	${GOCMD} test -run=^$$ -bench=${bench_name} -v -cpuprofile ${profile} -benchmem -benchtime=${bench_time} -timeout=90s ${pkg}
 	@echo "Benchmark profile saved at: ${profile}"
 
 .PHONY: fmt
