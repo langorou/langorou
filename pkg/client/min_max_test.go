@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/langorou/langorou/pkg/client/model"
 	"github.com/stretchr/testify/assert"
-	"log"
 	"testing"
 )
 
@@ -33,8 +32,6 @@ func TestMinMax(t *testing.T) {
 			// Or End: model.Coordinates{X: 1, Y:0 },
 			End: model.Coordinates{X: 0, Y: 2},
 		}}, coup)
-		log.Printf("proba: %f: %f", winProbability(8, 12, false), winProbability(12, 8, false))
-		log.Printf("proba: %f: %f", winProbability(14, 22, false), winProbability(22, 14, false))
 	})
 
 	t.Run("case1.1", func(t *testing.T) {

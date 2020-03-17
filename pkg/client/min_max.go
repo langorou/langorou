@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"github.com/langorou/langorou/pkg/client/model"
 	"math"
 )
@@ -32,6 +31,7 @@ type transpositionTable struct {
 }
 
 func (t *transpositionTable) get(hash uint64, depth uint8) (result, bool) {
+	// TODO: removeme
 	return result{}, false
 	rec, ok := t.t[hash]
 	if ok && rec.depth == depth {
@@ -45,11 +45,12 @@ func (t *transpositionTable) get(hash uint64, depth uint8) (result, bool) {
 }
 
 func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, depth uint8, alpha float64, beta float64) {
+	// TODO: removeme
 	return
 	s := result{coup: coup, score: value, depth: depth, typ: exact}
-	if alpha >= value {
+	if alpha > value {
 		s.typ = lower
-	} else if value >= beta {
+	} else if value > beta {
 		s.typ = upper
 	}
 
@@ -61,12 +62,7 @@ func (h *Heuristic) findBestCoup(state *model.State, maxDepth uint8) (coup model
 
 	for depth := uint8(1); depth <= maxDepth; depth++ {
 		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
-		fmt.Printf("Best coup: %+v, for score: %f found at depth: %d", coup, score, depth)
-		fmt.Println("")
-		fmt.Println("")
-		fmt.Println("")
 	}
-	// TODO: accept time limit and pass a channel
 
 	// log.Printf("misses: %d, hits: %d, hit ratio: %f, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), len(tt.t))
 	return coup, score
