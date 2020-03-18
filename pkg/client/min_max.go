@@ -56,7 +56,7 @@ func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, d
 func (h *Heuristic) findBestCoup(state *model.State, maxDepth uint8) (coup model.Coup, score float64) {
 	for depth := uint8(1); depth <= maxDepth; depth++ {
 		tt := &transpositionTable{map[uint64]result{}, 0, 0}
-		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 1, depth+1)
+		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
 		// log.Printf("misses: %d, hits: %d, hit ratio: %f, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), len(tt.t))
 	}
 
