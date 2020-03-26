@@ -1,21 +1,20 @@
-package client
+package model
 
 import (
-	"github.com/langorou/langorou/pkg/client/model"
 	"sort"
 )
 
-type potentialState struct {
-	s           *model.State
-	probability float64
+type PotentialState struct {
+	*State
+	P float64
 }
 
-// applyCoup computes the possibles states after applying a Coup (a list of moves)
-func applyCoup(origState *model.State, race model.Race, coup model.Coup, winThreshold float64) []potentialState {
+// ApplyCoup computes the possibles states after applying a Coup (a list of moves)
+func (s *State) ApplyCoup(race Race, coup Coup, winThreshold float64) []PotentialState {
 	// TODO improve this function, it's not really efficient, some moves are
 
 	// Start with the current state with probability 1
-	states := []potentialState{{s: origState.Copy(true), probability: 1}}
+	states := []PotentialState{{State: s.Copy(true), P: 1}}
 
 	// Sort moves by target cell
 	sort.Sort(coup)
@@ -29,7 +28,7 @@ func applyCoup(origState *model.State, race model.Race, coup model.Coup, winThre
 
 		// Move the start populations on each possible states
 		for _, state := range states {
-			state.s.DecreaseCell(move.Start, race, move.N)
+			state.DecreaseCell(move.Start, race, move.N)
 		}
 
 		// If the target cell is no more the same, stop aggregating and compute the possible states
@@ -50,16 +49,16 @@ func applyCoup(origState *model.State, race model.Race, coup model.Coup, winThre
 
 // applyMoveOnPossibleStates is used by applyCoup to iteratively compute the list of possible states
 // that can be reached from a state and a list of moves (a coup)
-func applyMoveOnPossibleStates(states []potentialState, race model.Race, target model.Coordinates, count uint8, winThreshold float64) []potentialState {
+func applyMoveOnPossibleStates(states []PotentialState, race Race, target Coordinates, count uint8, winThreshold float64) []PotentialState {
 	// We will have at lest len(states)
-	result := make([]potentialState, 0, len(states))
+	result := make([]PotentialState, 0, len(states))
 
 	for _, state := range states {
-		outcomes := applyMove(state.s, race, target, count, winThreshold)
+		outcomes := applyMove(state.State, race, target, count, winThreshold)
 
 		for _, outcome := range outcomes {
 			// Take into account the probability of the previous states
-			outcome.probability *= state.probability
+			outcome.P *= state.P
 			result = append(result, outcome)
 		}
 	}
@@ -69,7 +68,7 @@ func applyMoveOnPossibleStates(states []potentialState, race model.Race, target 
 
 // applyMove computes the possible next states from a given state and ONLY ONE move
 // XXX: WARNING it re-uses the given state, so it will become stale after
-func applyMove(s *model.State, race model.Race, target model.Coordinates, count uint8, winThreshold float64) []potentialState {
+func applyMove(s *State, race Race, target Coordinates, count uint8, winThreshold float64) []PotentialState {
 
 	endCell := s.Grid[target]
 
@@ -78,29 +77,29 @@ func applyMove(s *model.State, race model.Race, target model.Coordinates, count 
 
 		// Update the cells
 		s.SetCell(target, race, endCell.Count+count)
-		return []potentialState{{s: s, probability: 1}}
+		return []PotentialState{{State: s, P: 1}}
 	}
 
 	// Fight with the enemy or neutral
 	// We use a float here for later computation
 	var isNeutral float64 = 0
-	if endCell.Race == model.Neutral {
+	if endCell.Race == Neutral {
 		isNeutral = 1
 	}
 
-	P := winProbability(count, endCell.Count, isNeutral == 1)
+	P := WinProbability(count, endCell.Count, isNeutral == 1)
 
 	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
 	if P >= winThreshold {
 		// Consider it a win situation given the probability
 		endCount := uint8(P*float64(count) + isNeutral*float64(endCell.Count)*P)
 		s.SetCell(target, race, endCount)
-		return []potentialState{{s: s, probability: 1}}
+		return []PotentialState{{State: s, P: 1}}
 	} else if P < 1-winThreshold {
 		// Consider it a lose situation given the probability
 		endCount := uint8((1 - P) * float64(endCell.Count))
 		s.SetCell(target, endCell.Race, endCount)
-		return []potentialState{{s: s, probability: 1}}
+		return []PotentialState{{State: s, P: 1}}
 	}
 
 	winState := s
@@ -120,17 +119,17 @@ func applyMove(s *model.State, race model.Race, target model.Coordinates, count 
 		uint8((1-P)*float64(endCell.Count)),
 	)
 
-	return []potentialState{
-		{s: winState, probability: P},
-		{s: lossState, probability: 1 - P},
+	return []PotentialState{
+		{State: winState, P: P},
+		{State: lossState, P: 1 - P},
 	}
 }
 
 // Adapted from github.com/Succo/twilight, but we should use float since we evaluate probability of winning.
 
-// winProbability of winning for the attaquant 1 with an effectif E1, agains E2
+// WinProbability of winning for the attaquant 1 with an effectif E1, agains E2
 // E2 might be Neutral
-func winProbability(E1, E2 uint8, E2isNeutral bool) float64 {
+func WinProbability(E1, E2 uint8, E2isNeutral bool) float64 {
 	// True by property
 	if (E2isNeutral && E1 >= E2) || (!E2isNeutral && float64(E1) >= 1.5*float64(E2)) {
 		return 1

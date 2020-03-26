@@ -87,12 +87,14 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state *model.State, race m
 	}
 
 	if depth >= maxDepth || state.GameOver() { // Max depth reached or game is over
-		return bestCoup, h.scoreState(state)
+		value := h.scoreState(state)
+		return bestCoup, value
 	}
 
 	coups := generateCoups(state, race)
 	if len(coups) == 0 { // or no more moves found
-		return bestCoup, h.scoreState(state)
+		value := h.scoreState(state)
+		return bestCoup, value
 	}
 
 	// Chose if we want to maximize (us) or minimize (enemy) our score
@@ -106,13 +108,13 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state *model.State, race m
 	// for each generated coup, we compute the list of potential outcomes and compute an average score
 	// weighted by the probabilities of these potential outcomes
 	for _, coup := range coups {
-		outcomes := applyCoup(state, race, coup, h.WinThreshold)
+		outcomes := state.ApplyCoup(race, coup, h.WinThreshold)
 
 		score := 0.
 		// log.Printf("depth: %d", depth)
 		for _, outcome := range outcomes {
-			_, tmpScore := h.alphabeta(tt, outcome.s, race.Opponent(), alpha, beta, depth+1, maxDepth)
-			score += tmpScore * outcome.probability
+			_, tmpScore := h.alphabeta(tt, outcome.State, race.Opponent(), alpha, beta, depth+1, maxDepth)
+			score += tmpScore * outcome.P
 		}
 
 		if f(value, score) == score { // score >= value if max playing or value >= score if min playing

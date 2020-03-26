@@ -128,14 +128,14 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			{Start: model.Coordinates{X: 1, Y: 1}, End: model.Coordinates{}, N: 11},
 		}
 
-		potentialStates := applyCoup(s, model.Ally, coup, 1)
+		potentialStates := s.ApplyCoup(model.Ally, coup, 1)
 
 		assert.Len(t, potentialStates, 1)
 		expected := model.NewState(2, 2)
 		expected.SetCell(model.Coordinates{}, model.Ally, 21)
 		expected.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 9)
-		assert.EqualValues(t, 1, potentialStates[0].probability)
-		assert.Equal(t, expected.Grid, potentialStates[0].s.Grid)
+		assert.EqualValues(t, 1, potentialStates[0].P)
+		assert.Equal(t, expected.Grid, potentialStates[0].Grid)
 	})
 
 	t.Run("unsure win", func(t *testing.T) {
@@ -145,20 +145,20 @@ func TestSimulationAllyNeutral(t *testing.T) {
 			{Start: model.Coordinates{X: 1, Y: 1}, End: model.Coordinates{}, N: 8},
 		}
 
-		potentialStates := applyCoup(s, model.Ally, coup, 1)
+		potentialStates := s.ApplyCoup(model.Ally, coup, 1)
 
 		assert.Len(t, potentialStates, 2)
 		expected1 := model.NewState(2, 2)
 		expected1.SetCell(model.Coordinates{}, model.Ally, 7)
 		expected1.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 12)
-		assert.Equal(t, 0.4, potentialStates[0].probability)
-		assert.Equal(t, expected1.Grid, potentialStates[0].s.Grid)
+		assert.Equal(t, 0.4, potentialStates[0].P)
+		assert.Equal(t, expected1.Grid, potentialStates[0].Grid)
 
 		expected2 := model.NewState(2, 2)
 		expected2.SetCell(model.Coordinates{}, model.Neutral, 6)
 		expected2.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 12)
-		assert.EqualValues(t, 0.6, potentialStates[1].probability)
-		assert.Equal(t, expected2.Grid, potentialStates[1].s.Grid)
+		assert.EqualValues(t, 0.6, potentialStates[1].P)
+		assert.Equal(t, expected2.Grid, potentialStates[1].Grid)
 	})
 
 	t.Run("minmax decision", func(t *testing.T) {

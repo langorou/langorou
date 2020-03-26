@@ -154,7 +154,7 @@ func generateMovesFromCell(width, height uint8, source model.Coordinates, cell m
 
 // scoreNeutralBattle scores the issue of a battle between a monster and a neutral group
 func scoreNeutralBattle(c1, c2 model.Coordinates, cell1, cell2 model.Cell) float64 {
-	proba := winProbability(cell1.Count, cell2.Count, true)
+	proba := model.WinProbability(cell1.Count, cell2.Count, true)
 	distance := c1.Distance(c2)
 
 	// probable gain of population
@@ -171,9 +171,9 @@ func scoreMonsterBattle(c1, c2 model.Coordinates, cell1, cell2 model.Cell) (floa
 	distance := c1.Distance(c2)
 
 	// p1 is for 1 attacks 2
-	p1 := winProbability(cell1.Count, cell2.Count, false)
+	p1 := model.WinProbability(cell1.Count, cell2.Count, false)
 	// p2 is for 2 attacks 1
-	p2 := winProbability(cell2.Count, cell1.Count, false)
+	p2 := model.WinProbability(cell2.Count, cell1.Count, false)
 
 	s1 := p1*float64(cell1.Count+cell2.Count) - float64(cell2.Count)
 	s2 := p2*float64(cell2.Count+cell1.Count) - float64(cell1.Count)

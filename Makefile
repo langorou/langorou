@@ -31,6 +31,7 @@ replay:
 
 .PHONY: test
 test:
+	${GOCMD} vet ${pkg}
 	${GOCMD} test -v ${pkg}
 
 .PHONY: benchmark
