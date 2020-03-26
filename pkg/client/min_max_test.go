@@ -5,9 +5,19 @@ import (
 	"github.com/langorou/langorou/pkg/client/model"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 const testDepth = 8
+const testTimeout = 1 * time.Second
+
+func testedFindCoup(t *testing.T, state *model.State) model.Coup {
+	coupDepth, _ := testHeuristic.findBestCoup(state, testDepth)
+	coupTimeout := testHeuristic.findBestCoupWithTimeout(state, testTimeout)
+
+	assert.Equal(t, coupDepth, coupTimeout)
+	return coupDepth
+}
 
 var testHeuristic = NewHeuristic(NewDefaultHeuristicParameters())
 
@@ -25,7 +35,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{Y: 2}, model.Enemy, 12)
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 8)
 
-		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
+		coup := testedFindCoup(t, startState)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     8,
@@ -45,7 +55,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 2}, model.Enemy, 14)
 		startState.SetCell(model.Coordinates{X: 0, Y: 2}, model.Ally, 12)
 
-		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
+		coup := testedFindCoup(t, startState)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 0, Y: 2},
 			N:     12,
@@ -64,7 +74,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 2}, model.Ally, 14)
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Enemy, 12)
 
-		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
+		coup := testedFindCoup(t, startState)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 2, Y: 0},
 			N:     14,
@@ -86,7 +96,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Neutral, 10)
 		startState.SetCell(model.Coordinates{X: 8, Y: 8}, model.Enemy, 8)
 
-		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
+		coup := testedFindCoup(t, startState)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 0, Y: 0},
 			N:     8,
@@ -107,7 +117,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{X: 2, Y: 2}, model.Neutral, 7)
 		startState.SetCell(model.Coordinates{X: 7, Y: 4}, model.Enemy, 75)
 
-		coup, _ := testHeuristic.findBestCoup(startState, testDepth)
+		coup := testedFindCoup(t, startState)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     68,
@@ -180,13 +190,19 @@ func TestSimulationAllyNeutral(t *testing.T) {
 func BenchmarkAB(b *testing.B) {
 	cplxState := model.GenerateComplicatedState()
 
-	for _, depth := range []uint8{2, 3, 4, 5, 6} {
+	for _, depth := range []uint8{2, 3, 4, 5} {
 		b.Run(fmt.Sprintf("depth%d_complex", depth), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
 				testHeuristic.findBestCoup(cplxState.Copy(false), depth)
 			}
 		})
 	}
+
+	b.Run("timeout2s_complex", func(b *testing.B) {
+		for n := 0; n < b.N; n++ {
+			testHeuristic.findBestCoupWithTimeout(cplxState.Copy(false), 2*time.Second)
+		}
+	})
 
 	smplState := model.GenerateSimpleState()
 
@@ -197,6 +213,12 @@ func BenchmarkAB(b *testing.B) {
 			}
 		})
 	}
+
+	b.Run("timeout2s_simple", func(b *testing.B) {
+		for n := 0; n < b.N; n++ {
+			testHeuristic.findBestCoupWithTimeout(smplState.Copy(false), 2*time.Second)
+		}
+	})
 }
 
 func BenchmarkHeuristic(b *testing.B) {
