@@ -30,9 +30,9 @@ type transpositionTable struct {
 	hits, misses uint
 }
 
-func (t *transpositionTable) get(hash uint64, depth uint8) (result, bool) {
+func (t *transpositionTable) get(hash uint64, maxDepth uint8) (result, bool) {
 	rec, ok := t.t[hash]
-	if ok && rec.depth >= depth {
+	if ok && rec.depth >= maxDepth {
 		t.hits += 1
 		return rec, true
 	}
@@ -54,8 +54,8 @@ func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, d
 }
 
 func (h *Heuristic) findBestCoup(state *model.State, maxDepth uint8) (coup model.Coup, score float64) {
+	tt := &transpositionTable{map[uint64]result{}, 0, 0}
 	for depth := uint8(1); depth <= maxDepth; depth++ {
-		tt := &transpositionTable{map[uint64]result{}, 0, 0}
 		coup, score = h.alphabeta(tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
 		// log.Printf("misses: %d, hits: %d, hit ratio: %f, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), len(tt.t))
 	}
@@ -71,7 +71,7 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state *model.State, race m
 
 	hash := state.Hash(race)
 
-	rec, cached := tt.get(hash, depth)
+	rec, cached := tt.get(hash, maxDepth)
 	if cached {
 		if rec.typ == exact {
 			return rec.coup, rec.score
@@ -87,16 +87,12 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state *model.State, race m
 	}
 
 	if depth >= maxDepth || state.GameOver() { // Max depth reached or game is over
-		value := h.scoreState(state)
-		tt.save(hash, bestCoup, value, depth, alpha, beta)
-		return bestCoup, value
+		return bestCoup, h.scoreState(state)
 	}
 
 	coups := generateCoups(state, race)
 	if len(coups) == 0 { // or no more moves found
-		value := h.scoreState(state)
-		tt.save(hash, bestCoup, value, depth, alpha, beta)
-		return bestCoup, value
+		return bestCoup, h.scoreState(state)
 	}
 
 	// Chose if we want to maximize (us) or minimize (enemy) our score
@@ -141,6 +137,6 @@ func (h *Heuristic) alphabeta(tt *transpositionTable, state *model.State, race m
 		}
 	}
 
-	tt.save(hash, bestCoup, value, depth, alpha, beta)
+	tt.save(hash, bestCoup, value, maxDepth, alpha, beta)
 	return bestCoup, value
 }

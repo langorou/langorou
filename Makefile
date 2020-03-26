@@ -8,8 +8,8 @@ GOCMD = GO111MODULE=on go
 all: build
 
 profile=/tmp/profile.out
-bench_name=.
-bench_time=5s
+benchname=.
+benchtime=5s
 pkg=./...
 
 .PHONY: build
@@ -35,7 +35,7 @@ test:
 
 .PHONY: benchmark
 benchmark:
-	${GOCMD} test -run=^$$ -bench=${bench_name} -v -cpuprofile ${profile} -benchmem -benchtime=${bench_time} -timeout=90s ${pkg}
+	${GOCMD} test -run=^$$ -bench=${benchname} -v -cpuprofile ${profile} -benchmem -benchtime=${benchtime} -timeout=90s ${pkg}
 	@echo "Benchmark profile saved at: ${profile}"
 
 .PHONY: fmt
