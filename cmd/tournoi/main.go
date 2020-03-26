@@ -64,10 +64,10 @@ func main() {
 	flag.Parse()
 
 	competitors := []tournament.AIPlayer{
-		// client.NewMinMaxIA(2),
-		client.NewMinMaxIA(5),
+		// client.NewMinMaxIA(200 * time.Millisecond),
+		client.NewMinMaxIA(500 * time.Millisecond),
 		client.NewDumbIA(),
-		// client.NewMinMaxIA(7),
+		// client.NewMinMaxIA(1500 * time.Millisecond),
 	}
 
 	matchSummaryCh := make(chan tournament.MatchSummary)

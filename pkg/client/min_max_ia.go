@@ -2,31 +2,30 @@ package client
 
 import (
 	"fmt"
-	"log"
+	"time"
 
 	"github.com/langorou/langorou/pkg/client/model"
 )
 
 type MinMaxIA struct {
-	depth     uint8
+	timeout   time.Duration
 	heuristic Heuristic
 }
 
 var _ IA = &MinMaxIA{}
 
-func NewMinMaxIA(depth uint8) *MinMaxIA {
+func NewMinMaxIA(timeout time.Duration) *MinMaxIA {
 	return &MinMaxIA{
-		depth:     depth,
+		timeout:   timeout,
 		heuristic: NewHeuristic(NewDefaultHeuristicParameters()),
 	}
 }
 
 func (m *MinMaxIA) Play(state *model.State) model.Coup {
-	coup, score := m.heuristic.findBestCoup(state, m.depth)
-	log.Printf("MinMaxIA computed a coup with score: %f", score)
+	coup := m.heuristic.findBestCoupWithTimeout(state, m.timeout)
 	return coup
 }
 
 func (m *MinMaxIA) Name() string {
-	return fmt.Sprintf("min_max_%d_%s", m.depth, m.heuristic.String())
+	return fmt.Sprintf("min_max_%d_%s", m.timeout, m.heuristic.String())
 }
