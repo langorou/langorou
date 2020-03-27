@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"math"
+	"math/rand"
 
 	"github.com/langorou/langorou/pkg/client/model"
 )
@@ -29,6 +30,13 @@ type HeuristicParameters struct {
 
 	// WinThreshold represents the threshold upon which we consider we will surely win (for instance P > 0.8 => P = 1), 1-winThreshold represents the loseThreshold
 	WinThreshold float64
+
+	// MaxGroups indicates the maximum groups of ally units we want
+	MaxGroups uint8
+
+	// Groups is used to penalize/reward the fact of having a lot of scattered units
+	// We want it to be negative since we want to penalize the fact of having a lot of scattered units
+	Groups float64
 }
 
 func (hp *HeuristicParameters) String() string {
@@ -45,6 +53,8 @@ func NewDefaultHeuristicParameters() HeuristicParameters {
 		WinScore:         1e10,
 		LoseOverWinRatio: 1,
 		WinThreshold:     1.,
+		MaxGroups:        3,
+		Groups:           -5,
 	}
 }
 
@@ -62,10 +72,23 @@ func NewHeuristic(params HeuristicParameters) Heuristic {
 	return Heuristic{params}
 }
 
+// randomMove gives a random move among the possible moves for the race Ally
+func (h *Heuristic) randomMove(state *model.State) model.Coup {
+	coups := h.generateCoups(state, model.Ally)
+
+	if len(coups) == 0 {
+		return nil
+	}
+
+	return coups[rand.Intn(len(coups))]
+}
+
 // generateCoups generates coups for a given state and a given race
 // While a player _can_ make multiple moves within a coup, for now this function only
 // returns individual moves.
-func generateCoups(s *model.State, race model.Race) []model.Coup {
+// It computes a product of all the possible moves for each group of our race (including the move that consists in not moving)
+func (h *Heuristic) generateCoups(s *model.State, race model.Race) []model.Coup {
+	// TODO: try pre allocating here
 	all := []model.Coup{}
 
 	for coord, cell := range s.Grid {
@@ -239,6 +262,8 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 		return h.WinScore + cumScore
 	}
 
+	groupsCounts := scoreCounter{ally: float64(s.AlliesGroups), enemy: float64(s.EnemiesGroups)}
+
 	for _, heuristic := range []struct {
 		coef   float64
 		scores scoreCounter
@@ -246,6 +271,7 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 		{h.Counts, counts},
 		{h.Battles, battleCounts},
 		{h.NeutralBattles, neutralBattleCounts},
+		{h.Groups, groupsCounts},
 	} {
 		score := heuristic.scores.ally - heuristic.scores.enemy
 		total += score * heuristic.coef

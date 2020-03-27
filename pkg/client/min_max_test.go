@@ -276,7 +276,7 @@ func BenchmarkHash(b *testing.B) {
 
 func TestGenerateCoups(t *testing.T) {
 	startState := model.GenerateComplicatedState()
-	generateCoups(startState, model.Ally)
+	testHeuristic.generateCoups(startState, model.Ally)
 }
 
 func TestFindBestCoupWithTimeoutEnds(t *testing.T) {

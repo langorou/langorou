@@ -1,37 +1,29 @@
 package client
 
 import (
-	"math/rand"
 	"time"
 
 	"github.com/langorou/langorou/pkg/client/model"
 )
 
-type DumbIA struct{}
+type DumbIA struct {
+	h Heuristic
+}
 
 var _ IA = &DumbIA{}
 
 func NewDumbIA() *DumbIA {
-	return &DumbIA{}
+	h := NewHeuristic(NewDefaultHeuristicParameters())
+	return &DumbIA{h}
 }
 
 func (dia *DumbIA) Play(state *model.State) model.Coup {
 	// Simulate computation
 	time.Sleep(time.Second)
 
-	return randomMove(state)
+	return dia.h.randomMove(state)
 }
 
 func (dia *DumbIA) Name() string {
 	return "dumb_ia"
-}
-
-func randomMove(state *model.State) model.Coup {
-	coups := generateCoups(state, model.Ally)
-
-	if len(coups) == 0 {
-		return nil
-	}
-
-	return coups[rand.Intn(len(coups))]
 }
