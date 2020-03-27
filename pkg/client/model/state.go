@@ -55,15 +55,16 @@ type State struct {
 
 func NewState(height uint8, width uint8) *State {
 	return &State{
-		Grid:            map[Coordinates]Cell{},
-		Height:          height,
-		Width:           width,
-		time:            0,
-		CumulativeScore: 0,
-		allies:          0,
-		AlliesGroups:    0,
-		EnemiesGroups:   0,
-		enemies:         0,
+		Grid:                 map[Coordinates]Cell{},
+		Height:               height,
+		Width:                width,
+		time:                 0,
+		CumulativeScore:      0,
+		allies:               0,
+		AlliesGroups:         0,
+		EnemiesGroups:        0,
+		SmallestNeutralGroup: 0,
+		enemies:              0,
 	}
 }
 
