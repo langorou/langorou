@@ -55,9 +55,11 @@ func applyMoveOnPossibleStates(states []PotentialState, race Race, target Coordi
 		outcomes := applyMove(state.State, race, target, count, winThreshold)
 
 		for _, outcome := range outcomes {
-			// Take into account the probability of the previous states
-			outcome.P *= state.P
-			result = append(result, outcome)
+			if outcome.P != 0 && outcome.State != nil {
+				// Take into account the probability of the previous states
+				outcome.P *= state.P
+				result = append(result, outcome)
+			}
 		}
 	}
 
@@ -66,7 +68,7 @@ func applyMoveOnPossibleStates(states []PotentialState, race Race, target Coordi
 
 // applyMove computes the possible next states from a given state and ONLY ONE move
 // XXX: WARNING it re-uses the given state, so it will become stale after
-func applyMove(s *State, race Race, target Coordinates, count uint8, winThreshold float64) []PotentialState {
+func applyMove(s *State, race Race, target Coordinates, count uint8, winThreshold float64) [2]PotentialState {
 
 	endCell := s.Grid[target]
 
@@ -75,7 +77,7 @@ func applyMove(s *State, race Race, target Coordinates, count uint8, winThreshol
 
 		// Update the cells
 		s.SetCell(target, race, endCell.Count+count)
-		return []PotentialState{{State: s, P: 1}}
+		return [2]PotentialState{{State: s, P: 1}}
 	}
 
 	// Fight with the enemy or neutral
@@ -91,12 +93,12 @@ func applyMove(s *State, race Race, target Coordinates, count uint8, winThreshol
 		// Consider it a win situation given the probability
 		endCount := uint8(P*float64(count) + isNeutral*float64(endCell.Count)*P)
 		s.SetCell(target, race, endCount)
-		return []PotentialState{{State: s, P: 1}}
+		return [2]PotentialState{{State: s, P: 1}}
 	} else if P < 1-winThreshold {
 		// Consider it a lose situation given the probability
 		endCount := uint8((1 - P) * float64(endCell.Count))
 		s.SetCell(target, endCell.Race, endCount)
-		return []PotentialState{{State: s, P: 1}}
+		return [2]PotentialState{{State: s, P: 1}}
 	}
 
 	winState := s
@@ -116,7 +118,7 @@ func applyMove(s *State, race Race, target Coordinates, count uint8, winThreshol
 		uint8((1-P)*float64(endCell.Count)),
 	)
 
-	return []PotentialState{
+	return [2]PotentialState{
 		{State: winState, P: P},
 		{State: lossState, P: 1 - P},
 	}
