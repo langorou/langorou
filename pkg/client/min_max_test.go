@@ -9,7 +9,7 @@ import (
 )
 
 const testDepth = 8
-const testTimeout = 1 * time.Second
+const testTimeout time.Duration = 1 * time.Second
 
 func testedFindCoup(t *testing.T, state *model.State) model.Coup {
 	coupDepth, _ := testHeuristic.findBestCoup(state, testDepth)
@@ -125,7 +125,6 @@ func TestMinMax(t *testing.T) {
 		}}, coup)
 	})
 
-
 	t.Run("case4", func(t *testing.T) {
 		// N neutral, A ally, E enemy
 		// 10E | XXX | XXX
@@ -144,7 +143,6 @@ func TestMinMax(t *testing.T) {
 			End:   model.Coordinates{X: 0, Y: 1},
 		}}, coup)
 	})
-
 
 	t.Run("case4.1", func(t *testing.T) {
 		// N neutral, A ally, E enemy
@@ -165,8 +163,6 @@ func TestMinMax(t *testing.T) {
 		}}, coup)
 	})
 }
-
-
 
 func TestSimulationAllyNeutral(t *testing.T) {
 	startState := model.NewState(2, 2)
@@ -281,4 +277,16 @@ func BenchmarkHash(b *testing.B) {
 func TestGenerateCoups(t *testing.T) {
 	startState := model.GenerateComplicatedState()
 	generateCoups(startState, model.Ally)
+}
+
+func TestFindBestCoupWithTimeoutEnds(t *testing.T) {
+	startState := model.GenerateSimpleState()
+
+	for i := 0; i < 3; i++ {
+		s := time.Now()
+		testHeuristic.findBestCoupWithTimeout(startState, testTimeout)
+		e := time.Now()
+
+		assert.WithinDuration(t, s.Add(testTimeout), e, 50*time.Millisecond)
+	}
 }

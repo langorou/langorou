@@ -56,9 +56,12 @@ func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, d
 }
 
 func (h *Heuristic) findBestCoupWithTimeout(state *model.State, timeout time.Duration) model.Coup {
+	// We use time.NewTimer instead of time.After because it's much more precise
+	timer := time.NewTimer(timeout)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	results := make(chan model.Coup, 5)
+	results := make(chan model.Coup, 10)
 
 	go func() {
 		tt := &transpositionTable{map[uint64]result{}, 0, 0}
@@ -72,7 +75,8 @@ func (h *Heuristic) findBestCoupWithTimeout(state *model.State, timeout time.Dur
 	result := randomMove(state)
 	for {
 		select {
-		case <-time.After(timeout):
+		case <-timer.C:
+			timer.Stop()
 			return result
 		case coup := <-results:
 			result = coup

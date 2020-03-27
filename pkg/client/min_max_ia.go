@@ -22,8 +22,7 @@ func NewMinMaxIA(timeout time.Duration) *MinMaxIA {
 }
 
 func (m *MinMaxIA) Play(state *model.State) model.Coup {
-	coup := m.heuristic.findBestCoupWithTimeout(state, m.timeout)
-	return coup
+	return m.heuristic.findBestCoupWithTimeout(state, m.timeout)
 }
 
 func (m *MinMaxIA) Name() string {

@@ -1,7 +1,6 @@
 package client
 
 import (
-	"log"
 	"math/rand"
 	"time"
 
@@ -29,7 +28,6 @@ func (dia *DumbIA) Name() string {
 
 func randomMove(state *model.State) model.Coup {
 	coups := generateCoups(state, model.Ally)
-	log.Printf("coups: %v", coups)
 
 	if len(coups) == 0 {
 		return nil
