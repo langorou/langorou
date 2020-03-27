@@ -53,7 +53,7 @@ func NewDefaultHeuristicParameters() HeuristicParameters {
 		WinScore:         1e10,
 		LoseOverWinRatio: 1,
 		WinThreshold:     1.,
-		MaxGroups:        3,
+		MaxGroups:        2,
 		Groups:           -5,
 	}
 }
@@ -96,7 +96,13 @@ func (h *Heuristic) generateCoups(s *model.State, race model.Race) []model.Coup 
 			continue
 		}
 
-		moves := generateMovesFromCell(s.Width, s.Height, coord, cell)
+		splitThreshold := uint8(0)
+		allowSplit := (race == model.Ally && s.AlliesGroups < h.MaxGroups) || (race == model.Enemy && s.EnemiesGroups < h.MaxGroups)
+		if allowSplit {
+			splitThreshold = 2 * s.SmallestNeutralGroup
+		}
+
+		moves := generateMovesFromCell(s.Width, s.Height, coord, cell, splitThreshold)
 		max := len(all)
 		for _, move := range moves {
 			// Add the move alone
@@ -141,14 +147,15 @@ func transform(width, height uint8, c model.Coordinates, t transformation) (res 
 	return model.Coordinates{X: xRes, Y: yRes}, true
 }
 
-func generateMovesFromCell(width, height uint8, source model.Coordinates, cell model.Cell) []model.Move {
+func generateMovesFromCell(width, height uint8, source model.Coordinates, cell model.Cell, splitThreshold uint8) []model.Move {
 	// Simplification: as long as we are doing one move per turn, we are better
 	// off moving all units and not a subset.
 	// This is not true anymore if we do multiple moves per turn, as keeping
 	// some units in the source cell allows us to do another attack (on another
 	// cell) in the same turn.
 
-	moves := make([]model.Move, 0, 8)
+	// 8 for regular moves + 8 for possible split
+	moves := make([]model.Move, 0, 16)
 
 	// TODO: can be optimized
 	transforms := []transformation{
@@ -170,7 +177,15 @@ func generateMovesFromCell(width, height uint8, source model.Coordinates, cell m
 
 		moves = append(moves, model.Move{Start: source, N: cell.Count, End: target})
 
-		// TODO: splits
+		// TODO: for now we only move one subset of units, but we could move two, for instance:
+		// ---
+		// Currently we can't do: 24 at (0, 0) -> 12 at (1, 1) and 12 at (1, 0)
+		// We can only do		  24 at (0, 0) -> 12 at (0, 0) and 12 at (1, 0)
+		// ---
+		// Allow to split only if we are among a threshold and we always split in 2
+		if splitThreshold != 0 && cell.Count >= splitThreshold {
+			moves = append(moves, model.Move{Start: source, N: cell.Count / 2, End: target})
+		}
 	}
 	return moves
 }
