@@ -68,13 +68,14 @@ func (h *Heuristic) findBestCoupWithTimeout(state *model.State, timeout time.Dur
 		}
 	}()
 
-	var last model.Coup
+	// Init with a random move just in case even depth 1 does not complete
+	result := randomMove(state)
 	for {
 		select {
 		case <-time.After(timeout):
-			return last
+			return result
 		case coup := <-results:
-			last = coup
+			result = coup
 		}
 	}
 }

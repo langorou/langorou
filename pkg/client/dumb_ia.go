@@ -20,6 +20,14 @@ func (dia *DumbIA) Play(state *model.State) model.Coup {
 	// Simulate computation
 	time.Sleep(time.Second)
 
+	return randomMove(state)
+}
+
+func (dia *DumbIA) Name() string {
+	return "dumb_ia"
+}
+
+func randomMove(state *model.State) model.Coup {
 	coups := generateCoups(state, model.Ally)
 	log.Printf("coups: %v", coups)
 
@@ -28,8 +36,4 @@ func (dia *DumbIA) Play(state *model.State) model.Coup {
 	}
 
 	return coups[rand.Intn(len(coups))]
-}
-
-func (dia *DumbIA) Name() string {
-	return "dumb_ia"
 }
