@@ -129,6 +129,7 @@ func (h *Heuristic) alphabeta(ctx context.Context, tt *transpositionTable, state
 	}
 
 	coups := h.generateCoups(state, race)
+	defer putCoups(coups)
 	if len(coups) == 0 { // or no more moves found
 		value := h.scoreState(state)
 		return bestCoup, value
@@ -158,6 +159,8 @@ func (h *Heuristic) alphabeta(ctx context.Context, tt *transpositionTable, state
 			value = score
 			bestCoup = coup
 			// log.Printf("better value found %f: depth: %d, race: %v", value, depth, race)
+		} else {
+			putCoup(coup)
 		}
 
 		// Check for possible cuts
