@@ -29,10 +29,7 @@ type HeuristicParameters struct {
 }
 
 func (hp *HeuristicParameters) String() string {
-	return fmt.Sprintf(
-		"c%3.2f_b%3.2f_nb%3.2f_cs%4.3f_ws%3.2e_lowr%3.2f_wt%3.2f",
-		hp.Counts, hp.Battles, hp.NeutralBattles, hp.CumScore, hp.WinScore, hp.LoseOverWinRatio, hp.WinThreshold,
-	)
+	return fmt.Sprintf("%+v", *hp)
 }
 
 // NewDefaultHeuristicParameters creates heuristic parameters

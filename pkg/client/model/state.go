@@ -47,6 +47,10 @@ type State struct {
 	CumulativeScore float64
 	allies          uint8
 	enemies         uint8
+	// Allies Groups, EnemiesGroups and SmallestNeutralGroup are used for the split policy
+	AlliesGroups         uint8
+	EnemiesGroups        uint8
+	SmallestNeutralGroup uint8
 }
 
 func NewState(height uint8, width uint8) *State {
@@ -57,15 +61,30 @@ func NewState(height uint8, width uint8) *State {
 		time:            0,
 		CumulativeScore: 0,
 		allies:          0,
+		AlliesGroups:    0,
+		EnemiesGroups:   0,
 		enemies:         0,
 	}
 }
 
 // Copy copies a state, incrementing the cumulative score and the time
 func (s *State) Copy(advanceTime bool) *State {
+	var alliesGroups, enemiesGroups, smallestNeutralGroup uint8
+
 	newGrid := make(map[Coordinates]Cell, len(s.Grid))
 	for k, v := range s.Grid {
 		newGrid[k] = v
+
+		switch v.Race {
+		case Ally:
+			alliesGroups += 1
+		case Enemy:
+			enemiesGroups += 1
+		case Neutral:
+			if v.Count != 0 && (v.Count < smallestNeutralGroup || smallestNeutralGroup == 0) {
+				smallestNeutralGroup = v.Count
+			}
+		}
 	}
 
 	score := s.CumulativeScore
@@ -75,13 +94,16 @@ func (s *State) Copy(advanceTime bool) *State {
 		time += 1
 	}
 	return &State{
-		Grid:            newGrid,
-		Height:          s.Height,
-		Width:           s.Width,
-		CumulativeScore: score,
-		time:            time,
-		allies:          s.allies,
-		enemies:         s.enemies,
+		Grid:                 newGrid,
+		Height:               s.Height,
+		Width:                s.Width,
+		CumulativeScore:      score,
+		time:                 time,
+		allies:               s.allies,
+		AlliesGroups:         alliesGroups,
+		enemies:              s.enemies,
+		EnemiesGroups:        enemiesGroups,
+		SmallestNeutralGroup: smallestNeutralGroup,
 	}
 }
 
