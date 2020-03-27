@@ -72,7 +72,7 @@ func (h *Heuristic) findBestCoupWithTimeout(state *model.State, timeout time.Dur
 	}()
 
 	// Init with a random move just in case even depth 1 does not complete
-	result := randomMove(state)
+	result := h.randomMove(state)
 	for {
 		select {
 		case <-timer.C:
@@ -128,7 +128,7 @@ func (h *Heuristic) alphabeta(ctx context.Context, tt *transpositionTable, state
 		return bestCoup, value
 	}
 
-	coups := generateCoups(state, race)
+	coups := h.generateCoups(state, race)
 	if len(coups) == 0 { // or no more moves found
 		value := h.scoreState(state)
 		return bestCoup, value

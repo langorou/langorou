@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"math"
+	"math/rand"
 
 	"github.com/langorou/langorou/pkg/client/model"
 )
@@ -11,10 +12,13 @@ import (
 type HeuristicParameters struct {
 	// Counts is a coefficient for the counts of populations
 	Counts float64
+
 	// Battles is a coefficient for battles against opponents
 	Battles float64
+
 	// NeutralBattles is a coefficient for battles against neutrals
 	NeutralBattles float64
+
 	// CumScore is a coefficient for the cumulative score (used to give more priority to scores achieved with shorter paths)
 	CumScore float64
 
@@ -26,13 +30,17 @@ type HeuristicParameters struct {
 
 	// WinThreshold represents the threshold upon which we consider we will surely win (for instance P > 0.8 => P = 1), 1-winThreshold represents the loseThreshold
 	WinThreshold float64
+
+	// MaxGroups indicates the maximum groups of ally units we want
+	MaxGroups uint8
+
+	// Groups is used to penalize/reward the fact of having a lot of scattered units
+	// We want it to be negative since we want to penalize the fact of having a lot of scattered units
+	Groups float64
 }
 
 func (hp *HeuristicParameters) String() string {
-	return fmt.Sprintf(
-		"c%3.2f_b%3.2f_nb%3.2f_cs%4.3f_ws%3.2e_lowr%3.2f_wt%3.2f",
-		hp.Counts, hp.Battles, hp.NeutralBattles, hp.CumScore, hp.WinScore, hp.LoseOverWinRatio, hp.WinThreshold,
-	)
+	return fmt.Sprintf("%+v", *hp)
 }
 
 // NewDefaultHeuristicParameters creates heuristic parameters
@@ -45,6 +53,8 @@ func NewDefaultHeuristicParameters() HeuristicParameters {
 		WinScore:         1e10,
 		LoseOverWinRatio: 1,
 		WinThreshold:     1.,
+		MaxGroups:        2,
+		Groups:           -5,
 	}
 }
 
@@ -62,10 +72,23 @@ func NewHeuristic(params HeuristicParameters) Heuristic {
 	return Heuristic{params}
 }
 
+// randomMove gives a random move among the possible moves for the race Ally
+func (h *Heuristic) randomMove(state *model.State) model.Coup {
+	coups := h.generateCoups(state, model.Ally)
+
+	if len(coups) == 0 {
+		return nil
+	}
+
+	return coups[rand.Intn(len(coups))]
+}
+
 // generateCoups generates coups for a given state and a given race
 // While a player _can_ make multiple moves within a coup, for now this function only
 // returns individual moves.
-func generateCoups(s *model.State, race model.Race) []model.Coup {
+// It computes a product of all the possible moves for each group of our race (including the move that consists in not moving)
+func (h *Heuristic) generateCoups(s *model.State, race model.Race) []model.Coup {
+	// TODO: try pre allocating here
 	all := []model.Coup{}
 
 	for coord, cell := range s.Grid {
@@ -73,7 +96,13 @@ func generateCoups(s *model.State, race model.Race) []model.Coup {
 			continue
 		}
 
-		moves := generateMovesFromCell(s.Width, s.Height, coord, cell)
+		splitThreshold := uint8(0)
+		allowSplit := (race == model.Ally && s.AlliesGroups < h.MaxGroups) || (race == model.Enemy && s.EnemiesGroups < h.MaxGroups)
+		if allowSplit {
+			splitThreshold = 2 * s.SmallestNeutralGroup
+		}
+
+		moves := generateMovesFromCell(s.Width, s.Height, coord, cell, splitThreshold)
 		max := len(all)
 		for _, move := range moves {
 			// Add the move alone
@@ -118,14 +147,15 @@ func transform(width, height uint8, c model.Coordinates, t transformation) (res 
 	return model.Coordinates{X: xRes, Y: yRes}, true
 }
 
-func generateMovesFromCell(width, height uint8, source model.Coordinates, cell model.Cell) []model.Move {
+func generateMovesFromCell(width, height uint8, source model.Coordinates, cell model.Cell, splitThreshold uint8) []model.Move {
 	// Simplification: as long as we are doing one move per turn, we are better
 	// off moving all units and not a subset.
 	// This is not true anymore if we do multiple moves per turn, as keeping
 	// some units in the source cell allows us to do another attack (on another
 	// cell) in the same turn.
 
-	moves := make([]model.Move, 0, 8)
+	// 8 for regular moves + 8 for possible split
+	moves := make([]model.Move, 0, 16)
 
 	// TODO: can be optimized
 	transforms := []transformation{
@@ -147,7 +177,15 @@ func generateMovesFromCell(width, height uint8, source model.Coordinates, cell m
 
 		moves = append(moves, model.Move{Start: source, N: cell.Count, End: target})
 
-		// TODO: splits
+		// TODO: for now we only move one subset of units, but we could move two, for instance:
+		// ---
+		// Currently we can't do: 24 at (0, 0) -> 12 at (1, 1) and 12 at (1, 0)
+		// We can only do		  24 at (0, 0) -> 12 at (0, 0) and 12 at (1, 0)
+		// ---
+		// Allow to split only if we are among a threshold and we always split in 2
+		if splitThreshold != 0 && cell.Count >= splitThreshold {
+			moves = append(moves, model.Move{Start: source, N: cell.Count / 2, End: target})
+		}
 	}
 	return moves
 }
@@ -216,10 +254,10 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 			}
 
 			if cell2.Race == model.Neutral {
-				// TODO: average here since we can count a battle multiple times
+				// TODO: average here since we can count a battle multiple times, for now we just consider it as multiple opportunities, hence there is no average
 				neutralBattleCounts.add(cell1.Race, scoreNeutralBattle(c1, c2, cell1, cell2))
 			} else if cell2.Race == cell1.Race.Opponent() {
-				// TODO: average here since we can count a battle multiple times
+				// TODO: average here since we can count a battle multiple times, for now we just consider it as multiple opportunities, hence there is no average
 				g1, g2 := scoreMonsterBattle(c1, c2, cell1, cell2)
 				battleCounts.add(cell1.Race, g1)
 				battleCounts.add(cell2.Race, g2)
@@ -229,8 +267,7 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 
 	total := 0.
 
-	// TODO: make those parameters of a heuristic struct and try to tweak them
-	// TODO: distance power alpha instead of distance power 1
+	// TODO: try distance power alpha instead of distance power 1, caveat: computations
 	cumScore := s.CumulativeScore
 
 	// Win and lose cases
@@ -240,16 +277,19 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 		return h.WinScore + cumScore
 	}
 
+	groupsCounts := scoreCounter{ally: float64(s.AlliesGroups), enemy: float64(s.EnemiesGroups)}
+
 	for _, heuristic := range []struct {
-		coeff  float64
+		coef   float64
 		scores scoreCounter
 	}{
 		{h.Counts, counts},
 		{h.Battles, battleCounts},
 		{h.NeutralBattles, neutralBattleCounts},
+		{h.Groups, groupsCounts},
 	} {
 		score := heuristic.scores.ally - heuristic.scores.enemy
-		total += score * heuristic.coeff
+		total += score * heuristic.coef
 	}
 
 	return total + (cumScore * h.CumScore)

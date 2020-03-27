@@ -11,8 +11,6 @@ type PotentialState struct {
 
 // ApplyCoup computes the possibles states after applying a Coup (a list of moves)
 func (s *State) ApplyCoup(race Race, coup Coup, winThreshold float64) []PotentialState {
-	// TODO improve this function, it's not really efficient, some moves are
-
 	// Start with the current state with probability 1
 	states := []PotentialState{{State: s.Copy(true), P: 1}}
 
@@ -89,7 +87,6 @@ func applyMove(s *State, race Race, target Coordinates, count uint8, winThreshol
 
 	P := WinProbability(count, endCell.Count, isNeutral == 1)
 
-	// TODO: maybe we should consider, probability > threshold as 1 as well (for instance threshold = 0.9) to lower # of computations
 	if P >= winThreshold {
 		// Consider it a win situation given the probability
 		endCount := uint8(P*float64(count) + isNeutral*float64(endCell.Count)*P)

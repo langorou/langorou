@@ -9,7 +9,7 @@ import (
 )
 
 const testDepth = 8
-const testTimeout time.Duration = 1 * time.Second
+const testTimeout time.Duration = 1500 * time.Millisecond
 
 func testedFindCoup(t *testing.T, state *model.State) model.Coup {
 	coupDepth, _ := testHeuristic.findBestCoup(state, testDepth)
@@ -162,6 +162,26 @@ func TestMinMax(t *testing.T) {
 			End:   model.Coordinates{X: 0, Y: 1},
 		}}, coup)
 	})
+
+	t.Run("case5", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// 10N | XXX
+		// 15E | 20A
+
+		startState := model.NewState(2, 2)
+		startState.SetCell(model.Coordinates{}, model.Neutral, 10)
+		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 20)
+		startState.SetCell(model.Coordinates{X: 1, Y: 0}, model.Enemy, 15)
+
+		// Probability 5/6 of winning if we attack the enemy directly
+		// only 3/4 if we get the villagers but the enemy attacks us after
+		coup := testedFindCoup(t, startState)
+		assert.Equal(t, model.Coup{model.Move{
+			Start: model.Coordinates{X: 1, Y: 1},
+			N:     20,
+			End:   model.Coordinates{X: 1, Y: 0},
+		}}, coup)
+	})
 }
 
 func TestSimulationAllyNeutral(t *testing.T) {
@@ -207,21 +227,6 @@ func TestSimulationAllyNeutral(t *testing.T) {
 		expected2.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 12)
 		assert.EqualValues(t, 0.6, potentialStates[1].P)
 		assert.Equal(t, expected2.Grid, potentialStates[1].Grid)
-	})
-
-	t.Run("minmax decision", func(t *testing.T) {
-		s := startState.Copy(false)
-		s.SetCell(model.Coordinates{X: 1}, model.Enemy, 15)
-		assert.False(t, s.GameOver())
-		coup, _ := testHeuristic.findBestCoup(s, testDepth)
-
-		// Probability 5/6 of winning if we attack the enemy directly
-		// only 3/4 if we get the villagers but the enemy attacks us after
-		assert.Equal(t, model.Coup{model.Move{
-			Start: model.Coordinates{X: 1, Y: 1},
-			N:     20,
-			End:   model.Coordinates{X: 1, Y: 0},
-		}}, coup)
 	})
 }
 
@@ -276,7 +281,7 @@ func BenchmarkHash(b *testing.B) {
 
 func TestGenerateCoups(t *testing.T) {
 	startState := model.GenerateComplicatedState()
-	generateCoups(startState, model.Ally)
+	testHeuristic.generateCoups(startState, model.Ally)
 }
 
 func TestFindBestCoupWithTimeoutEnds(t *testing.T) {
