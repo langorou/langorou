@@ -67,14 +67,15 @@ func (h *Heuristic) findBestCoupWithTimeout(state *model.State, timeout time.Dur
 	go func() {
 		tt := &transpositionTable{map[uint64]result{}, 0, 0}
 		depth := uint8(1)
-		for {
+		// TODO: fixme, for some reason when we go too deep the IA starts behaving strangely, we might have bugs
+		for depth <= 8 {
 			select {
 			case <-ctx.Done():
 				return
 			default:
 				coup, _ := h.alphabeta(ctx, tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
 				results <- coup
-				depth++
+				depth += 1
 			}
 		}
 	}()
@@ -165,8 +166,6 @@ func (h *Heuristic) alphabeta(ctx context.Context, tt *transpositionTable, state
 			_, tmpScore := h.alphabeta(ctx, tt, outcome.State, race.Opponent(), alpha, beta, depth+1, maxDepth)
 			score += tmpScore * outcome.P
 		}
-
-		// fmt.Printf("%s- race: %v, coup: %+v, score: %f\n", strings.Repeat("  ", int(depth)), race, coup, score)
 
 		if f(value, score) == score { // score >= value if max playing or value >= score if min playing
 			value = score
