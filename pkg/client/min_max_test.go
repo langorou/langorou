@@ -280,6 +280,42 @@ func TestMinMax(t *testing.T) {
 			End:   model.Coordinates{X: 1, Y: 1},
 		}}, coup)
 	})
+
+	t.Run("case6.2", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// XXX | XXX | 12A
+		// XXX | XXX | XXX
+		// XXX | 30E | XXX
+
+		startState := model.NewState(3, 3)
+		startState.SetCell(model.Coordinates{X: 1, Y: 2}, model.Enemy, 30)
+		startState.SetCell(model.Coordinates{X: 2}, model.Ally, 12)
+
+		coup := testedFindCoup(t, startState)
+		assert.Equal(t, model.Coup{model.Move{
+			Start: model.Coordinates{X: 2, Y: 0},
+			N:     12,
+			End:   model.Coordinates{X: 1, Y: 0},
+		}}, coup)
+	})
+
+	t.Run("case6.2.1", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// XXX | 12E | XXX
+		// XXX | XXX | XXX
+		// XXX | 30A | XXX
+
+		startState := model.NewState(3, 3)
+		startState.SetCell(model.Coordinates{X: 1, Y: 2}, model.Ally, 30)
+		startState.SetCell(model.Coordinates{X: 1}, model.Enemy, 12)
+
+		coup := testedFindCoup(t, startState)
+		assert.Equal(t, model.Coup{model.Move{
+			Start: model.Coordinates{X: 1, Y: 2},
+			N:     30,
+			End:   model.Coordinates{X: 1, Y: 1},
+		}}, coup)
+	})
 }
 
 func TestSimulationAllyNeutral(t *testing.T) {

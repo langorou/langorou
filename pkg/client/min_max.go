@@ -140,6 +140,7 @@ func (h *Heuristic) alphabeta(ctx context.Context, tt *transpositionTable, state
 
 	coups := h.generateCoups(state, race)
 	defer putCoups(coups)
+
 	if len(coups) == 0 { // or no more moves found
 		value := h.scoreState(state)
 		return bestCoup, value
