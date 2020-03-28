@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -89,7 +90,10 @@ func main() {
 
 		for _, mp := range mapPaths {
 			// could use go on this, but generate two many games at the same time
-			tournament.RunTournamentOnMap(mp, false, tournament.RandMapLimits{}, timeoutS, competitors, matchSummaryCh)
+			if strings.HasSuffix(mp, ".xml") {
+				log.Printf("Launching tournament on map %s", mp)
+				tournament.RunTournamentOnMap(mp, false, tournament.RandMapLimits{}, timeoutS, competitors, matchSummaryCh)
+			}
 		}
 	} else {
 		limits := tournament.RandMapLimits{
