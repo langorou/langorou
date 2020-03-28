@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"sync"
 
 	"github.com/langorou/langorou/pkg/client/model"
 )
@@ -58,6 +59,38 @@ func NewDefaultHeuristicParameters() HeuristicParameters {
 	}
 }
 
+var coupPool = sync.Pool{
+	New: func() interface{} {
+		return model.Coup{}
+	},
+}
+
+var coupsPool = sync.Pool{
+	New: func() interface{} {
+		return []model.Coup{}
+	},
+}
+
+func putCoup(coup model.Coup) {
+	coupPool.Put(coup)
+}
+
+func putCoups(coups []model.Coup) {
+	coupsPool.Put(coups)
+}
+
+func getCoup() model.Coup {
+	coup := coupPool.Get()
+
+	return coup.(model.Coup)[:0]
+}
+
+func getCoups() []model.Coup {
+	coups := coupsPool.Get()
+
+	return coups.([]model.Coup)[:0]
+}
+
 // Heuristic represents a heuristic
 type Heuristic struct {
 	HeuristicParameters
@@ -89,7 +122,7 @@ func (h *Heuristic) randomMove(state *model.State) model.Coup {
 // It computes a product of all the possible moves for each group of our race (including the move that consists in not moving)
 func (h *Heuristic) generateCoups(s *model.State, race model.Race) []model.Coup {
 	// TODO: try pre allocating here
-	all := []model.Coup{}
+	all := getCoups()
 
 	for coord, cell := range s.Grid {
 		if cell.Race != race {
@@ -111,9 +144,9 @@ func (h *Heuristic) generateCoups(s *model.State, race model.Race) []model.Coup 
 			// Add the move to all the previous coups
 			for _, coup := range all[:max] {
 				// We have to make a copy here otherwise we will reuse the same array which will cause issues
-				newCoup := make(model.Coup, len(coup)+1)
+				newCoup := getCoup()
 				copy(newCoup, coup)
-				newCoup[len(coup)] = move
+				newCoup = append(newCoup, move)
 
 				all = append(all, newCoup)
 			}
