@@ -77,7 +77,7 @@ func (mr *MatchSummary) String() string {
 
 func (mr *MatchSummary) shortName() string {
 	// First player is always werewolves, second Vampire
-	return fmt.Sprintf("%s_VS_%sON%s", mr.Player1.Name(), mr.Player2.Name(), mr.MapName)
+	return fmt.Sprintf("%s_VS_%sON%s", mr.Player1.Name(), mr.Player2.Name(), filepath.Base(mr.MapName))
 
 }
 

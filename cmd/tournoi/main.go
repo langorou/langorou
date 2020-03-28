@@ -66,9 +66,9 @@ func main() {
 
 	competitors := []tournament.AIPlayer{
 		// client.NewMinMaxIA(200 * time.Millisecond),
-		client.NewMinMaxIA(500 * time.Millisecond),
+		// client.NewMinMaxIA(500 * time.Millisecond),
 		client.NewDumbIA(),
-		// client.NewMinMaxIA(1500 * time.Millisecond),
+		client.NewMinMaxIA(1500 * time.Millisecond),
 	}
 
 	matchSummaryCh := make(chan tournament.MatchSummary)
@@ -116,7 +116,7 @@ func main() {
 	log.Printf("\nFinal Scores\n--------\n%s", leaderboard.Leaderboard())
 
 	failIf(utils.CreateDirIfNotExist("./out"), "")
-	leaderboard.Save("./out/")
+	failIf(leaderboard.Save("./out/"), "saving")
 
 	os.Exit(0)
 }

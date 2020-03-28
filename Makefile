@@ -11,6 +11,7 @@ profile=/tmp/profile.out
 benchname=.
 benchtime=5s
 pkg=./...
+maps=./maps
 
 .PHONY: build
 build:
@@ -23,11 +24,11 @@ auto:
 
 .PHONY: tournoi
 tournoi:
-	${GOCMD} run cmd/tournoi/main.go
+	${GOCMD} run cmd/tournoi/main.go -mapFolder ${maps}
 
 .PHONY: replay
 replay:
-	${GOCMD} run cmd/replay/main.go -replay
+	${GOCMD} run cmd/replay/main.go -replay ${replayPath}
 
 .PHONY: test
 test:
