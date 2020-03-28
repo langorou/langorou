@@ -2,9 +2,10 @@ package client
 
 import (
 	"context"
-	"github.com/langorou/langorou/pkg/client/model"
 	"math"
 	"time"
+
+	"github.com/langorou/langorou/pkg/client/model"
 )
 
 const (
@@ -35,11 +36,11 @@ type transpositionTable struct {
 func (t *transpositionTable) get(hash uint64, maxDepth uint8) (result, bool) {
 	rec, ok := t.t[hash]
 	if ok && rec.depth >= maxDepth {
-		t.hits += 1
+		t.hits++
 		return rec, true
 	}
 
-	t.misses += 1
+	t.misses++
 
 	return rec, false
 }
@@ -66,8 +67,13 @@ func (h *Heuristic) findBestCoupWithTimeout(state *model.State, timeout time.Dur
 	go func() {
 		tt := &transpositionTable{map[uint64]result{}, 0, 0}
 		for depth := uint8(1); ; depth++ {
-			coup, _ := h.alphabeta(ctx, tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
-			results <- coup
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				coup, _ := h.alphabeta(ctx, tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
+				results <- coup
+			}
 		}
 	}()
 
@@ -85,9 +91,10 @@ func (h *Heuristic) findBestCoupWithTimeout(state *model.State, timeout time.Dur
 }
 
 func (h *Heuristic) findBestCoup(state *model.State, maxDepth uint8) (coup model.Coup, score float64) {
+	ctx := context.Background()
 	tt := &transpositionTable{map[uint64]result{}, 0, 0}
 	for depth := uint8(1); depth <= maxDepth; depth++ {
-		coup, score = h.alphabeta(context.Background(), tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
+		coup, score = h.alphabeta(ctx, tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
 		// log.Printf("misses: %d, hits: %d, hit ratio: %f, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), len(tt.t))
 	}
 

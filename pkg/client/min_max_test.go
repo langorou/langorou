@@ -2,10 +2,11 @@ package client
 
 import (
 	"fmt"
-	"github.com/langorou/langorou/pkg/client/model"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/langorou/langorou/pkg/client/model"
+	"github.com/stretchr/testify/assert"
 )
 
 const testDepth = 8
