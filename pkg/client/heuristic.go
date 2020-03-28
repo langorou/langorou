@@ -48,8 +48,8 @@ func (hp *HeuristicParameters) String() string {
 func NewDefaultHeuristicParameters() HeuristicParameters {
 	return HeuristicParameters{
 		Counts:           1,
-		Battles:          0.5,
-		NeutralBattles:   0.5,
+		Battles:          0.05,
+		NeutralBattles:   0.05,
 		CumScore:         0.0001,
 		WinScore:         1e10,
 		LoseOverWinRatio: 1,
@@ -307,7 +307,8 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 	if counts.ally == 0 {
 		return -(h.WinScore * h.LoseOverWinRatio) + cumScore
 	} else if counts.enemy == 0 {
-		return h.WinScore + cumScore
+		// In case of win we want to win the earliest we can, so we SUBSTRACT the cumulative score
+		return h.WinScore - cumScore
 	}
 
 	groupsCounts := scoreCounter{ally: float64(s.AlliesGroups), enemy: float64(s.EnemiesGroups)}

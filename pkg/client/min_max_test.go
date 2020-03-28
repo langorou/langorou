@@ -10,7 +10,7 @@ import (
 )
 
 const testDepth = 8
-const testTimeout time.Duration = 1500 * time.Millisecond
+const testTimeout time.Duration = 100 * time.Millisecond
 
 func testedFindCoup(t *testing.T, state *model.State) model.Coup {
 	coupDepth, _ := testHeuristic.findBestCoup(state, testDepth)
