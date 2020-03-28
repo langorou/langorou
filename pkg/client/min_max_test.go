@@ -64,6 +64,47 @@ func TestMinMax(t *testing.T) {
 		}}, coup)
 	})
 
+	t.Run("case1.1.1", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// 10N | XXX | 14A
+		// 12E | XXX | XXX
+		// XXX | XXX | XXX
+
+		startState := model.NewState(3, 3)
+		startState.SetCell(model.Coordinates{}, model.Neutral, 10)
+		startState.SetCell(model.Coordinates{X: 2}, model.Ally, 14)
+		startState.SetCell(model.Coordinates{Y: 1}, model.Enemy, 12)
+
+		coup := testedFindCoup(t, startState)
+		assert.Len(t, coup, 1)
+		assert.Equal(t, model.Coordinates{X: 2}, coup[0].Start)
+		assert.EqualValues(t, 14, coup[0].N)
+		// Allow both X: 1, Y:0 and X: 1, Y:1
+		assert.EqualValues(t, 1, coup[0].End.X)
+	})
+
+	t.Run("case1.1.2", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// 10N | 14E | XXX
+		// 12A | XXX | XXX
+		// XXX | XXX | XXX
+
+		startState := model.NewState(3, 3)
+		startState.SetCell(model.Coordinates{}, model.Neutral, 10)
+		startState.SetCell(model.Coordinates{X: 1}, model.Enemy, 14)
+		startState.SetCell(model.Coordinates{Y: 1}, model.Ally, 12)
+
+		// Probability  3/7 of winning if we attack the 14 group
+		// Probability 15/22 of winning if we are being attacked by the 14 group when we are 22
+		// So we should take the villagers
+		coup := testedFindCoup(t, startState)
+		assert.Equal(t, model.Coup{model.Move{
+			Start: model.Coordinates{Y: 1},
+			N:     12,
+			End:   model.Coordinates{X: 0, Y: 0},
+		}}, coup)
+	})
+
 	t.Run("case1.2", func(t *testing.T) {
 		// N neutral, A ally, E enemy
 		// 10N | XXX | 14A
@@ -80,6 +121,26 @@ func TestMinMax(t *testing.T) {
 			Start: model.Coordinates{X: 2, Y: 0},
 			N:     14,
 			End:   model.Coordinates{X: 1, Y: 1},
+		}}, coup)
+	})
+
+	t.Run("case1.3", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// 10N | XXX | 06N
+		// XXX | XXX | XXX
+		// 12A | 08E | XXX
+
+		startState := model.NewState(3, 3)
+		startState.SetCell(model.Coordinates{}, model.Neutral, 10)
+		startState.SetCell(model.Coordinates{X: 2}, model.Neutral, 6)
+		startState.SetCell(model.Coordinates{Y: 2}, model.Ally, 12)
+		startState.SetCell(model.Coordinates{X: 1, Y: 2}, model.Enemy, 8)
+
+		coup := testedFindCoup(t, startState)
+		assert.Equal(t, model.Coup{model.Move{
+			Start: model.Coordinates{X: 0, Y: 2},
+			N:     12,
+			End:   model.Coordinates{X: 1, Y: 2},
 		}}, coup)
 	})
 
@@ -181,6 +242,42 @@ func TestMinMax(t *testing.T) {
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     20,
 			End:   model.Coordinates{X: 1, Y: 0},
+		}}, coup)
+	})
+
+	t.Run("case6", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// XXX | XXX | 12E
+		// XXX | XXX | XXX
+		// 30A | XXX | XXX
+
+		startState := model.NewState(3, 3)
+		startState.SetCell(model.Coordinates{Y: 2}, model.Ally, 30)
+		startState.SetCell(model.Coordinates{X: 2}, model.Enemy, 12)
+
+		coup := testedFindCoup(t, startState)
+		assert.Equal(t, model.Coup{model.Move{
+			Start: model.Coordinates{X: 0, Y: 2},
+			N:     30,
+			End:   model.Coordinates{X: 1, Y: 1},
+		}}, coup)
+	})
+
+	t.Run("case6.1", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// XXX | XXX | 12A
+		// XXX | 30E | XXX
+		// XXX | XXX | XXX
+
+		startState := model.NewState(3, 3)
+		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Enemy, 30)
+		startState.SetCell(model.Coordinates{X: 2}, model.Ally, 12)
+
+		coup := testedFindCoup(t, startState)
+		assert.Equal(t, model.Coup{model.Move{
+			Start: model.Coordinates{X: 2, Y: 0},
+			N:     12,
+			End:   model.Coordinates{X: 1, Y: 1},
 		}}, coup)
 	})
 }

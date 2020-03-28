@@ -66,13 +66,15 @@ func (h *Heuristic) findBestCoupWithTimeout(state *model.State, timeout time.Dur
 
 	go func() {
 		tt := &transpositionTable{map[uint64]result{}, 0, 0}
-		for depth := uint8(1); ; depth++ {
+		depth := uint8(1)
+		for {
 			select {
 			case <-ctx.Done():
 				return
 			default:
 				coup, _ := h.alphabeta(ctx, tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
 				results <- coup
+				depth++
 			}
 		}
 	}()
@@ -93,6 +95,7 @@ func (h *Heuristic) findBestCoupWithTimeout(state *model.State, timeout time.Dur
 func (h *Heuristic) findBestCoup(state *model.State, maxDepth uint8) (coup model.Coup, score float64) {
 	ctx := context.Background()
 	tt := &transpositionTable{map[uint64]result{}, 0, 0}
+
 	for depth := uint8(1); depth <= maxDepth; depth++ {
 		coup, score = h.alphabeta(ctx, tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
 		// log.Printf("misses: %d, hits: %d, hit ratio: %f, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), len(tt.t))
@@ -162,11 +165,14 @@ func (h *Heuristic) alphabeta(ctx context.Context, tt *transpositionTable, state
 			score += tmpScore * outcome.P
 		}
 
+		// fmt.Printf("%s- race: %v, coup: %+v, score: %f\n", strings.Repeat("  ", int(depth)), race, coup, score)
+
 		if f(value, score) == score { // score >= value if max playing or value >= score if min playing
 			value = score
 			bestCoup = coup
 			// log.Printf("better value found %f: depth: %d, race: %v", value, depth, race)
 		} else {
+			// Put back the coup into the pool
 			putCoup(coup)
 		}
 

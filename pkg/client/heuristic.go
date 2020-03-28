@@ -100,7 +100,7 @@ func (h *Heuristic) String() string {
 	return h.HeuristicParameters.String()
 }
 
-// NewHeuristic
+// NewHeuristic creates a new heuristic given parameters
 func NewHeuristic(params HeuristicParameters) Heuristic {
 	return Heuristic{params}
 }
