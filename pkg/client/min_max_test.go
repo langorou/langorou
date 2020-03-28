@@ -10,7 +10,7 @@ import (
 )
 
 const testDepth = 8
-const testTimeout time.Duration = 100 * time.Millisecond
+const testTimeout time.Duration = 500 * time.Millisecond
 
 func testedFindCoup(t *testing.T, state *model.State) model.Coup {
 	coupDepth, _ := testHeuristic.findBestCoup(state, testDepth)
@@ -314,6 +314,24 @@ func TestMinMax(t *testing.T) {
 			Start: model.Coordinates{X: 1, Y: 2},
 			N:     30,
 			End:   model.Coordinates{X: 1, Y: 1},
+		}}, coup)
+	})
+
+	t.Run("case7", func(t *testing.T) {
+		// N neutral, A ally, E enemy
+		// XXX | XXX | XXX | 12E | 02N
+		// Enemy far away
+
+		startState := model.NewState(5, 7)
+		startState.SetCell(model.Coordinates{X: 3, Y: 2}, model.Ally, 12)
+		startState.SetCell(model.Coordinates{X: 4, Y: 2}, model.Neutral, 2)
+		startState.SetCell(model.Coordinates{Y: 5}, model.Enemy, 10)
+
+		coup := testedFindCoup(t, startState)
+		assert.Equal(t, model.Coup{model.Move{
+			Start: model.Coordinates{X: 3, Y: 2},
+			N:     12,
+			End:   model.Coordinates{X: 4, Y: 2},
 		}}, coup)
 	})
 }

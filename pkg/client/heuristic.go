@@ -44,18 +44,18 @@ func (hp *HeuristicParameters) String() string {
 	return fmt.Sprintf("%+v", *hp)
 }
 
-// NewDefaultHeuristicParameters creates heuristic parameters
+// NewDefaultHeuristicParameters creates defaultns heuristic parameters
 func NewDefaultHeuristicParameters() HeuristicParameters {
 	return HeuristicParameters{
 		Counts:           1,
-		Battles:          0.05,
-		NeutralBattles:   0.05,
+		Battles:          0.0,
+		NeutralBattles:   0.0,
 		CumScore:         0.0001,
 		WinScore:         1e10,
 		LoseOverWinRatio: 1,
 		WinThreshold:     1.,
 		MaxGroups:        2,
-		Groups:           -5,
+		Groups:           -0,
 	}
 }
 
