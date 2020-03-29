@@ -280,16 +280,21 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 		}
 		counts.add(cell1.Race, float64(cell1.Count))
 
+		// Avoid computing battles scores if the coefficients are 0
+		if h.Battles == 0 && h.NeutralBattles == 0 {
+			continue
+		}
+
 		// Loop to compute stats on the possible battle
 		for c2, cell2 := range s.Grid {
 			if c1 == c2 || cell1.Race == cell2.Race {
 				continue
 			}
 
-			if cell2.Race == model.Neutral {
+			if cell2.Race == model.Neutral && h.NeutralBattles != 0 {
 				// TODO: average here since we can count a battle multiple times, for now we just consider it as multiple opportunities, hence there is no average
 				neutralBattleCounts.add(cell1.Race, scoreNeutralBattle(c1, c2, cell1, cell2))
-			} else if cell2.Race == cell1.Race.Opponent() {
+			} else if cell2.Race == cell1.Race.Opponent() && h.Battles != 0 {
 				// TODO: average here since we can count a battle multiple times, for now we just consider it as multiple opportunities, hence there is no average
 				g1, g2 := scoreMonsterBattle(c1, c2, cell1, cell2)
 				battleCounts.add(cell1.Race, g1)
