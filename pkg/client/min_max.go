@@ -47,9 +47,9 @@ func (t *transpositionTable) get(hash uint64, maxDepth uint8) (result, bool) {
 
 func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, depth uint8, alpha float64, beta float64) {
 	s := result{coup: coup, score: value, depth: depth, typ: exact}
-	if alpha > value {
+	if alpha >= value {
 		s.typ = lower
-	} else if value > beta {
+	} else if value >= beta {
 		s.typ = upper
 	}
 
@@ -149,49 +149,70 @@ func (h *Heuristic) alphabeta(ctx context.Context, tt *transpositionTable, state
 
 	// Chose if we want to maximize (us) or minimize (enemy) our score
 	value := negInfinity
+	cut := false
 	f := math.Max
 	if race == model.Enemy {
 		value = posInfinity
 		f = math.Min
 	}
 
-	// for each generated coup, we compute the list of potential outcomes and compute an average score
-	// weighted by the probabilities of these potential outcomes
+	// Start by exploring the best coup found in the transposition table if it's there
+	if len(rec.coup) != 0 {
+		alpha, beta, value, bestCoup, cut = h.exploreCoup(ctx, state, race, rec.coup, tt, alpha, beta, depth, maxDepth, f, value, bestCoup)
+		if cut {
+			// Don't explore the following coups
+			coups = nil
+		}
+	}
+
 	for _, coup := range coups {
-		outcomes := state.ApplyCoup(race, coup, h.WinThreshold)
+		// for each generated coup, we compute the list of potential outcomes and compute an average score
+		// weighted by the probabilities of these potential outcomes
+		alpha, beta, value, bestCoup, cut = h.exploreCoup(ctx, state, race, coup, tt, alpha, beta, depth, maxDepth, f, value, bestCoup)
 
-		score := 0.
-		// log.Printf("depth: %d", depth)
-		for _, outcome := range outcomes {
-			_, tmpScore := h.alphabeta(ctx, tt, outcome.State, race.Opponent(), alpha, beta, depth+1, maxDepth)
-			score += tmpScore * outcome.P
-		}
-
-		if f(value, score) == score { // score >= value if max playing or value >= score if min playing
-			value = score
-			bestCoup = coup
-			// log.Printf("better value found %f: depth: %d, race: %v", value, depth, race)
-		} else {
-			// Put back the coup into the pool
-			putCoup(coup)
-		}
-
-		// Check for possible cuts
-		if race == model.Enemy {
-			// alpha cut
-			if alpha > value {
-				break
-			}
-			beta = f(beta, value)
-		} else {
-			// beta cut
-			if value > beta {
-				break
-			}
-			alpha = f(alpha, value)
+		if cut {
+			break
 		}
 	}
 
 	tt.save(hash, bestCoup, value, maxDepth, alpha, beta)
 	return bestCoup, value
+}
+
+func (h *Heuristic) exploreCoup(ctx context.Context, state *model.State, race model.Race, coup model.Coup, tt *transpositionTable, alpha float64, beta float64, depth uint8, maxDepth uint8, f func(x float64, y float64) float64, value float64, bestCoup model.Coup) (float64, float64, float64, model.Coup, bool) {
+	outcomes := state.ApplyCoup(race, coup, h.WinThreshold)
+	score := 0.
+	cut := false
+
+	// log.Printf("depth: %d", depth)
+	for _, outcome := range outcomes {
+		_, tmpScore := h.alphabeta(ctx, tt, outcome.State, race.Opponent(), alpha, beta, depth+1, maxDepth)
+		score += tmpScore * outcome.P
+	}
+
+	if f(value, score) == score { // score >= value if max playing or value >= score if min playing
+		value = score
+		bestCoup = coup
+		// log.Printf("better value found %f: depth: %d, race: %v", value, depth, race)
+	} else {
+		// Put back the coup into the pool
+		putCoup(coup)
+	}
+
+	// Check for possible cuts
+	if race == model.Enemy {
+		// alpha cut
+		cut = alpha >= value
+		if !cut {
+			beta = f(beta, value)
+		}
+	} else {
+		// beta cut
+		cut = value >= beta
+		if !cut {
+			alpha = f(alpha, value)
+		}
+	}
+
+	return alpha, beta, value, bestCoup, cut
 }

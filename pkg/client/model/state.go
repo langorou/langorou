@@ -2,9 +2,10 @@ package model
 
 import (
 	"fmt"
-	"github.com/spaolacci/murmur3"
 	"reflect"
 	"unsafe"
+
+	"github.com/spaolacci/murmur3"
 )
 
 type Race uint8
