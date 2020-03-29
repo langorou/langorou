@@ -291,6 +291,7 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 				continue
 			}
 
+			// TODO: try distance power alpha instead of distance power 1, caveat: computations
 			if cell2.Race == model.Neutral && h.NeutralBattles != 0 {
 				// TODO: average here since we can count a battle multiple times, for now we just consider it as multiple opportunities, hence there is no average
 				neutralBattleCounts.add(cell1.Race, scoreNeutralBattle(c1, c2, cell1, cell2))
@@ -305,8 +306,7 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 
 	total := 0.
 
-	// TODO: try distance power alpha instead of distance power 1, caveat: computations
-	cumScore := s.CumulativeScore
+	cumScore := (s.CumulativeScore * h.CumScore)
 
 	// Win and lose cases
 	if counts.ally == 0 {
@@ -331,5 +331,5 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 		total += score * heuristic.coef
 	}
 
-	return total + (cumScore * h.CumScore)
+	return total - cumScore
 }
