@@ -34,22 +34,27 @@ type transpositionTable struct {
 }
 
 func (t *transpositionTable) get(hash uint64, maxDepth uint8) (result, bool) {
-	rec, ok := t.t[hash]
-	if ok && rec.depth >= maxDepth {
-		t.hits++
-		return rec, true
-	}
+	// XXX: Unfortunately since we want to give priority to shorter paths leading to good results in our
+	// heuristic we can't avoid the graph history interaction (described a bit there: https://www.chessprogramming.org/Graph_History_Interaction)
+	// Hence we only use our transposition table during iterative deepening to get the Best move for a given state found at the previous iteration
 
-	t.misses++
+	// rec, ok := t.t[hash]
+	// if ok && rec.depth >= maxDepth {
+	// 	t.hits++
+	// 	return rec, true
+	// }
 
-	return rec, false
+	// t.misses++
+
+	// return rec, false
+	return t.t[hash], false
 }
 
 func (t *transpositionTable) save(hash uint64, coup model.Coup, value float64, depth uint8, alpha float64, beta float64) {
 	s := result{coup: coup, score: value, depth: depth, typ: exact}
-	if alpha >= value {
+	if alpha > value {
 		s.typ = lower
-	} else if value >= beta {
+	} else if value > beta {
 		s.typ = upper
 	}
 
@@ -67,8 +72,7 @@ func (h *Heuristic) findBestCoupWithTimeout(state *model.State, timeout time.Dur
 	go func() {
 		tt := &transpositionTable{map[uint64]result{}, 0, 0}
 		depth := uint8(1)
-		// TODO: fixme, for some reason when we go too deep the IA starts behaving strangely, we might have bugs
-		for depth <= 8 {
+		for {
 			select {
 			case <-ctx.Done():
 				return
@@ -101,9 +105,6 @@ func (h *Heuristic) findBestCoup(state *model.State, maxDepth uint8) (coup model
 		coup, score = h.alphabeta(ctx, tt, state, model.Ally, negInfinity, posInfinity, 0, depth)
 		// log.Printf("misses: %d, hits: %d, hit ratio: %f, entries: %d", tt.misses, tt.hits, float64(tt.hits)/(float64(tt.hits+tt.misses)), len(tt.t))
 	}
-
-	// TODO: use transposition table to use the best move found at previous depth
-
 	return coup, score
 }
 
@@ -202,13 +203,13 @@ func (h *Heuristic) exploreCoup(ctx context.Context, state *model.State, race mo
 	// Check for possible cuts
 	if race == model.Enemy {
 		// alpha cut
-		cut = alpha >= value
+		cut = alpha > value
 		if !cut {
 			beta = f(beta, value)
 		}
 	} else {
 		// beta cut
-		cut = value >= beta
+		cut = value > beta
 		if !cut {
 			alpha = f(alpha, value)
 		}

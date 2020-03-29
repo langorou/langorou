@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testDepth = 8
-const testTimeout time.Duration = 500 * time.Millisecond
+const testDepth = 5
+const testTimeout time.Duration = 1500 * time.Millisecond
 
 func testedFindCoup(t *testing.T, state *model.State) model.Coup {
 	coupDepth, _ := testHeuristic.findBestCoup(state, testDepth)
@@ -36,7 +36,7 @@ func TestMinMax(t *testing.T) {
 		startState.SetCell(model.Coordinates{Y: 2}, model.Enemy, 12)
 		startState.SetCell(model.Coordinates{X: 1, Y: 1}, model.Ally, 8)
 
-		coup := testedFindCoup(t, startState)
+		coup := testHeuristic.findBestCoupWithTimeout(startState, testTimeout)
 		assert.Equal(t, model.Coup{model.Move{
 			Start: model.Coordinates{X: 1, Y: 1},
 			N:     8,

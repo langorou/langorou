@@ -48,8 +48,8 @@ func (hp *HeuristicParameters) String() string {
 func NewDefaultHeuristicParameters() HeuristicParameters {
 	return HeuristicParameters{
 		Counts:           1,
-		Battles:          0.0,
-		NeutralBattles:   0.0,
+		Battles:          0.02,
+		NeutralBattles:   0.03,
 		CumScore:         0.0001,
 		WinScore:         1e10,
 		LoseOverWinRatio: 1,
@@ -331,5 +331,5 @@ func (h *Heuristic) scoreState(s *model.State) float64 {
 		total += score * heuristic.coef
 	}
 
-	return total - cumScore
+	return total + cumScore
 }
