@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"unsafe"
 
 	"github.com/spaolacci/murmur3"
@@ -111,20 +112,26 @@ func (s *State) Copy(advanceTime bool) *State {
 
 // PPrint pretty prints a state
 func (s State) PPrint() {
+	fmt.Print(s.String())
+}
+
+func (s State) String() string {
+	rows := make([]string, s.Height)
+
 	raceRepr := []string{"N", "A", "E"}
-	fmt.Println("Grid: ")
 	for row := uint8(0); row < s.Height; row++ {
 		for col := uint8(0); col < s.Width; col++ {
 			coord := Coordinates{X: col, Y: row}
 			cell, ok := s.Grid[coord]
 			if ok && !cell.IsEmpty() {
-				fmt.Printf("| %3.d%s ", cell.Count, raceRepr[cell.Race])
+				rows[row] += fmt.Sprintf("| %3.d%s ", cell.Count, raceRepr[cell.Race])
 			} else {
-				fmt.Print("|      ")
+				rows[row] += "|      "
 			}
 		}
-		fmt.Println("|")
 	}
+
+	return "\n" + strings.Join(rows, "|\n")
 }
 
 func (s *State) updateRaceCount(race Race, plus uint8, minus uint8) {
@@ -154,11 +161,11 @@ func (s *State) SetCell(pos Coordinates, race Race, count uint8) {
 func (s *State) DecreaseCell(pos Coordinates, race Race, count uint8) {
 	c, ok := s.Grid[pos]
 	if !ok {
-		panic(fmt.Sprintf("Tried to decrease population at non existing cell: %+v", pos))
+		panic(fmt.Sprintf("Tried to decrease population at non existing cell: %+v, race: %v, state: %s", pos, race, s.String()))
 	}
 
 	if c.Race != race {
-		panic(fmt.Sprintf("Invalid move ! Race: %v, tried to move units of race: %v", race, c.Race))
+		panic(fmt.Sprintf("Invalid move ! Race: %v, tried to move units of race: %v, state: %s", race, c.Race, s.String()))
 	}
 
 	s.updateRaceCount(race, 0, count)
@@ -168,7 +175,7 @@ func (s *State) DecreaseCell(pos Coordinates, race Race, count uint8) {
 		s.EmptyCell(pos)
 		return
 	} else if c.Count < count {
-		panic(fmt.Sprintf("Invalid move ! From pos: %+v, race: %v, current count: %d, move count: %d", pos, c.Race, c.Count, count))
+		panic(fmt.Sprintf("Invalid move ! From pos: %+v, race: %v, current count: %d, move count: %d, ", pos, c.Race, c.Count, count))
 	}
 
 	c.Count -= count
@@ -193,11 +200,8 @@ func (s *State) packedU32(buf []uint32) []uint32 {
 	return buf
 }
 
-var hashBuffer = sortableU32{}
-
 // Hash gives the hash for the given state
-// NOT USABLE in parallel for now because hashBuffer is a global
-func (s *State) Hash(race Race) uint64 {
+func (s *State) Hash(race Race, hashBuffer []uint32) uint64 {
 	// Trick to avoid allocating a buffer every time, we just reuse the same, caveat: not suitable for goroutines
 	// this will also leak memory but it's neglectable because it will leak for at much:
 	// N_bytes_per_entry * Max_entries = 4 * 256 * 256 = 256 Kb

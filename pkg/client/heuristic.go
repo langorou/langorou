@@ -94,6 +94,9 @@ func getCoups() []model.Coup {
 // Heuristic represents a heuristic
 type Heuristic struct {
 	HeuristicParameters
+
+	// Used to avoid reallocations when computing a state hash
+	hashBuffer []uint32
 }
 
 func (h *Heuristic) String() string {
@@ -102,7 +105,7 @@ func (h *Heuristic) String() string {
 
 // NewHeuristic creates a new heuristic given parameters
 func NewHeuristic(params HeuristicParameters) Heuristic {
-	return Heuristic{params}
+	return Heuristic{params, make([]uint32, 0, 32)}
 }
 
 // randomMove gives a random move among the possible moves for the race Ally

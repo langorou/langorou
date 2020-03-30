@@ -427,7 +427,7 @@ func BenchmarkHash(b *testing.B) {
 	startState := model.GenerateComplicatedState()
 
 	for n := 0; n < b.N; n++ {
-		startState.Hash(model.Ally)
+		startState.Hash(model.Ally, testHeuristic.hashBuffer)
 	}
 }
 
