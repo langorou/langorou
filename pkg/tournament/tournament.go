@@ -311,7 +311,7 @@ func RunTournamentOnMap(
 
 	maxConcurrentPlay := int(math.Max(1, float64(runtime.NumCPU()-1)))
 
-	concurrentPlays := make(chan job)
+	concurrentPlays := make(chan job, maxConcurrentPlay)
 	log.Printf("Launching %d games at the same time.", maxConcurrentPlay)
 
 	for i := 0; i < maxConcurrentPlay; i++ {
@@ -343,8 +343,8 @@ func RunTournamentOnMap(
 			}
 		}
 	}
-	close(concurrentPlays)
 
 	wg.Wait()
+	close(concurrentPlays)
 
 }
