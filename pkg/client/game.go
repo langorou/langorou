@@ -23,7 +23,7 @@ func (g *Game) Nme() string {
 }
 
 func (g *Game) Mov() []model.Move {
-	return g.ia.Play(g.state)
+	return g.ia.Play(g.state.Copy(false))
 }
 
 // Set initialize an empty grid in the state

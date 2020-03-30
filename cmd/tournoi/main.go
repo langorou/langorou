@@ -60,16 +60,79 @@ func init() {
 	flag.IntVar(&timeoutS, "timeout", 8, "timeout in seconds for each move")
 }
 
+func generatePlayers() []tournament.Participant {
+	dur := 1 * time.Second
+
+	players := []tournament.Participant{
+		{Dumb: true},
+		{Timeout: dur, Params: client.NewDefaultHeuristicParameters()},
+		{Timeout: dur, Params: client.HeuristicParameters{
+			Counts:           1,
+			Battles:          0.05,
+			NeutralBattles:   0.05,
+			CumScore:         client.DefaultCumScore,
+			WinScore:         client.DefaultWinScore,
+			LoseOverWinRatio: 1,
+			WinThreshold:     1,
+			MaxGroups:        3,
+			Groups:           0,
+		}},
+		{Timeout: dur, Params: client.HeuristicParameters{
+			Counts:           1,
+			Battles:          0.02,
+			NeutralBattles:   0.03,
+			CumScore:         client.DefaultCumScore,
+			WinScore:         client.DefaultWinScore,
+			LoseOverWinRatio: 1,
+			WinThreshold:     0.8,
+			MaxGroups:        3,
+			Groups:           0,
+		}},
+		{Timeout: dur, Params: client.HeuristicParameters{
+			Counts:           1,
+			Battles:          0.,
+			NeutralBattles:   0.,
+			CumScore:         0,
+			WinScore:         client.DefaultWinScore,
+			LoseOverWinRatio: 1,
+			WinThreshold:     1,
+			MaxGroups:        3,
+			Groups:           -0.001,
+		}},
+		{Timeout: dur, Params: client.HeuristicParameters{
+			// Not risk averse at all
+			Counts:           1,
+			Battles:          client.DefaultBattles,
+			NeutralBattles:   client.DefaultNeutralBattles,
+			CumScore:         client.DefaultCumScore,
+			WinScore:         client.DefaultWinScore,
+			LoseOverWinRatio: 0.8,
+			WinThreshold:     0.8,
+			MaxGroups:        2,
+			Groups:           client.DefaultGroups,
+		}},
+		{Timeout: dur, Params: client.HeuristicParameters{
+			// risk averse
+			Counts:           1,
+			Battles:          client.DefaultBattles,
+			NeutralBattles:   client.DefaultNeutralBattles,
+			CumScore:         client.DefaultCumScore,
+			WinScore:         client.DefaultWinScore,
+			LoseOverWinRatio: 1.2,
+			WinThreshold:     1,
+			MaxGroups:        2,
+			Groups:           client.DefaultGroups,
+		}},
+	}
+
+	return players
+}
+
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 	flag.Parse()
 
-	competitors := []tournament.AIPlayer{
-		// client.NewMinMaxIA(200 * time.Millisecond),
-		// client.NewMinMaxIA(500 * time.Millisecond),
-		client.NewDumbIA(),
-		client.NewMinMaxIA(1500 * time.Millisecond),
-	}
+	competitors := generatePlayers()
 
 	matchSummaryCh := make(chan tournament.MatchSummary)
 	var leaderboard tournament.TournamentResult

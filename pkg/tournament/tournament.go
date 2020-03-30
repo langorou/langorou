@@ -32,7 +32,27 @@ func newRandomMap(limits RandMapLimits) mapParams {
 	}
 }
 
-type AIPlayer client.IA
+type Participant struct {
+	Dumb    bool
+	Timeout time.Duration
+	Params  client.HeuristicParameters
+}
+
+func (p Participant) createPlayer() client.IA {
+	if p.Dumb {
+		return client.NewDumbIA()
+	}
+
+	return client.NewMinMaxIAP(p.Timeout, p.Params)
+}
+
+func (p Participant) Name() string {
+	if p.Dumb {
+		return "dumb IA"
+	}
+
+	return fmt.Sprintf("min_max_%d_%+v", p.Timeout, p.Params)
+}
 
 type matchResult int
 
@@ -44,8 +64,8 @@ const (
 
 type MatchSummary struct {
 	MapName                string
-	Player1                AIPlayer
-	Player2                AIPlayer
+	Player1                Participant
+	Player2                Participant
 	Winner                 matchResult
 	Player1Eff, Player2Eff int
 	EndTurn                int
@@ -180,7 +200,7 @@ func playMap(
 	randMapParams mapParams,
 	timeoutS int,
 	p1,
-	p2 AIPlayer,
+	p2 Participant,
 	matchSummaryCh chan MatchSummary,
 	wg *sync.WaitGroup,
 ) error {
@@ -210,7 +230,7 @@ func playMap(
 
 	log.Printf("Launching a game for p1 and p2 on %s", addr)
 
-	player1, err := client.NewTCPClient(addr, p1.Name(), p1)
+	player1, err := client.NewTCPClient(addr, p1.Name(), p1.createPlayer())
 	if err != nil {
 		return err
 	}
@@ -218,7 +238,7 @@ func playMap(
 		return fmt.Errorf("fail to init player 1: %s", err)
 	}
 
-	player2, err := client.NewTCPClient(addr, p2.Name(), p2)
+	player2, err := client.NewTCPClient(addr, p2.Name(), p2.createPlayer())
 	if err != nil {
 		return err
 	}
@@ -274,7 +294,7 @@ func RunTournamentOnMap(
 	isRand bool,
 	limits RandMapLimits,
 	timeoutS int,
-	competitors []AIPlayer,
+	competitors []Participant,
 	matchSummaryCh chan MatchSummary,
 ) {
 
