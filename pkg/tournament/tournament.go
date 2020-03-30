@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -14,8 +16,6 @@ import (
 	"github.com/langorou/langorou/pkg/utils"
 	"github.com/langorou/twilight/server"
 )
-
-const maxConcurrentPlay = 4
 
 type mapParams struct {
 	rows, columns, humans, monsters int
@@ -308,6 +308,8 @@ func RunTournamentOnMap(
 
 	var wg sync.WaitGroup
 	var randMapParams = newRandomMap(limits)
+
+	maxConcurrentPlay := int(math.Max(1, float64(runtime.NumCPU()-1)))
 
 	concurrentPlays := make(chan job)
 	log.Printf("Launching %d games at the same time.", maxConcurrentPlay)
