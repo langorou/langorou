@@ -164,12 +164,23 @@ func (h *Heuristic) generateCoups(s *model.State, race model.Race) []model.Coup 
 
 		moves := generateMovesFromCell(s.Width, s.Height, coord, cell, splitThreshold)
 		max := len(all)
+
 		for _, move := range moves {
 			// Add the move alone
 			all = append(all, model.Coup{move})
 
 			// Add the move to all the previous coups
+			COUPS:
 			for _, coup := range all[:max] {
+
+				// RULE 5 ! We can't have the same Start and End cell within a given coup
+				for _, m := range coup {
+					if m.Start == move.End || m.End == move.Start {
+						// Rule 5 not respected we can't play this move
+						continue COUPS
+					}
+				}
+
 				// We have to make a copy here otherwise we will reuse the same array which will cause issues
 				newCoup := append(getCoup(), coup...)
 				all = append(all, append(newCoup, move))
