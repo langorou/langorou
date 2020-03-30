@@ -19,7 +19,7 @@ func NewDumbIA() *DumbIA {
 
 func (dia *DumbIA) Play(state *model.State) model.Coup {
 	// Simulate computation
-	time.Sleep(time.Second)
+	time.Sleep(50 * time.Millisecond)
 
 	return dia.h.randomMove(state)
 }
