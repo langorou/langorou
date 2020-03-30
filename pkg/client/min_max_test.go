@@ -476,3 +476,19 @@ func TestFindBestCoupWithTimeoutEnds(t *testing.T) {
 		assert.WithinDuration(t, s.Add(testTimeout), e, 50*time.Millisecond)
 	}
 }
+
+func TestGenerateCoupsDifferentStartAndEndCells(t *testing.T) {
+	// RULE 5 of the Game
+	startState := model.NewState(2, 2)
+	startState.SetCell(model.Coordinates{}, model.Ally, 1)
+	startState.SetCell(model.Coordinates{X: 1}, model.Ally, 1)
+
+	// 01A | 01A
+	// XXX | XXX
+
+	// Individual moves: 3 moves possible for each groups -> 6 Moves
+	// Group moves: 4 possibles (2 groups go down, or they cross in an X movement) and 2 where they unit (bottom left or bottom right)
+
+	coups := testHeuristic.generateCoups(startState, model.Ally)
+	assert.Len(t, coups, 10)
+}
