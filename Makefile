@@ -1,5 +1,6 @@
 BINARY = langorou
 GOARCH = amd64
+MAIN = ./cmd/player/main.go
 
 # Enable go modules
 GOCMD = GO111MODULE=on go
@@ -16,7 +17,21 @@ maps=./maps
 .PHONY: build
 build:
 	mkdir -p bin
-	${GOCMD} build -o ./bin/${BINARY} ./cmd/player/main.go
+	${GOCMD} build -o ./build/${BINARY} ${MAIN}
+
+.PHONY: linux
+linux:
+	GOOS=linux GOARCH=${GOARCH} ${GOCMD} build ${LDFLAGS} -o ./build/${BINARY}-linux-${GOARCH} ${MAIN}
+
+.PHONY: macos
+macos:
+	GOOS=darwin GOARCH=${GOARCH} ${GOCMD} build ${LDFLAGS} -o ./build/${BINARY}-macos-${GOARCH} ${MAIN}
+
+.PHONY: windows
+windows:
+	GOOS=windows GOARCH=${GOARCH} ${GOCMD} build ${LDFLAGS} -o ./build/${BINARY}-windows-${GOARCH}.exe ${MAIN}
+
+cross: linux macos windows
 
 .PHONY: auto
 auto:
