@@ -33,5 +33,5 @@ func (m *MinMaxIA) Play(state *model.State) model.Coup {
 }
 
 func (m *MinMaxIA) Name() string {
-	return fmt.Sprintf("min_max_%d_%s", m.timeout, m.heuristic.String())
+	return fmt.Sprintf("min_max_%d_%s", m.timeout, m.heuristic.ShortString())
 }

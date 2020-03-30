@@ -56,6 +56,14 @@ func (hp *HeuristicParameters) String() string {
 	return fmt.Sprintf("%+v", *hp)
 }
 
+// ShortString give a smaller string representation for heuristic parameters. Useful to name an ia in short way.
+func (hp *HeuristicParameters) ShortString() string {
+	return fmt.Sprintf(
+		"c%3.2f_b%3.2f_nb%3.2f_cs%4.3f_ws%3.2e_lowr%3.2f_wt%3.2f_mg%d_g%1.0f",
+		hp.Counts, hp.Battles, hp.NeutralBattles, hp.CumScore, hp.WinScore, hp.LoseOverWinRatio, hp.WinThreshold, hp.MaxGroups, hp.Groups,
+	)
+}
+
 // NewDefaultHeuristicParameters creates defaultns heuristic parameters
 func NewDefaultHeuristicParameters() HeuristicParameters {
 	return HeuristicParameters{
@@ -113,6 +121,11 @@ type Heuristic struct {
 
 func (h *Heuristic) String() string {
 	return h.HeuristicParameters.String()
+}
+
+// ShortString returns a smaller string representation of the heuristic
+func (h *Heuristic) ShortString() string {
+	return h.HeuristicParameters.ShortString()
 }
 
 // NewHeuristic creates a new heuristic given parameters
