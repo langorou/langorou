@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -194,30 +196,36 @@ func (tr Result) Save(path string) error {
 	return nil
 }
 
-func playMap(
-	mapPath string,
-	isRand bool,
-	randMapParams mapParams,
-	timeoutS int,
-	p1,
-	p2 Participant,
-	matchSummaryCh chan MatchSummary,
-	wg *sync.WaitGroup,
-) error {
+type job interface {
+	execute() error
+}
 
-	defer wg.Done()
+type playMap struct {
+	mapPath        string
+	isRand         bool
+	randMapParams  mapParams
+	timeoutS       int
+	p1             Participant
+	p2             Participant
+	matchSummaryCh chan MatchSummary
+	wg             *sync.WaitGroup
+}
+
+func (pm playMap) execute() error {
+
+	defer pm.wg.Done()
 
 	portUsed := make(chan int, 1)
 	gameOutcomeCh := make(chan server.GameOutcome, 1)
 
 	go server.StartServer(
-		mapPath,
-		isRand,
-		randMapParams.rows,
-		randMapParams.columns,
-		randMapParams.humans,
-		randMapParams.monsters,
-		time.Duration(timeoutS)*time.Second,
+		pm.mapPath,
+		pm.isRand,
+		pm.randMapParams.rows,
+		pm.randMapParams.columns,
+		pm.randMapParams.humans,
+		pm.randMapParams.monsters,
+		time.Duration(pm.timeoutS)*time.Second,
 		true,
 		portUsed,
 		true,
@@ -228,9 +236,9 @@ func playMap(
 
 	addr := fmt.Sprintf("localhost:%d", port)
 
-	log.Printf("Launching a game for p1 and p2 on %s", addr)
+	log.Printf("Launching %s vs %s on %s", pm.p1.Name(), pm.p2.Name(), addr)
 
-	player1, err := client.NewTCPClient(addr, p1.Name(), p1.createPlayer())
+	player1, err := client.NewTCPClient(addr, pm.p1.Name(), pm.p1.createPlayer())
 	if err != nil {
 		return err
 	}
@@ -238,7 +246,7 @@ func playMap(
 		return fmt.Errorf("fail to init player 1: %s", err)
 	}
 
-	player2, err := client.NewTCPClient(addr, p2.Name(), p2.createPlayer())
+	player2, err := client.NewTCPClient(addr, pm.p2.Name(), pm.p2.createPlayer())
 	if err != nil {
 		return err
 	}
@@ -254,16 +262,16 @@ func playMap(
 	matchRes := MatchSummary{
 		EndTurn:    outcome.Turn,
 		History:    outcome.History,
-		Player1:    p1,
-		Player2:    p2,
+		Player1:    pm.p1,
+		Player2:    pm.p2,
 		Player1Eff: outcome.P1Eff,
 		Player2Eff: outcome.P2Eff,
 	}
 
-	if isRand {
-		matchRes.MapName = randMapParams.String()
+	if pm.isRand {
+		matchRes.MapName = pm.randMapParams.String()
 	} else {
-		matchRes.MapName = mapPath
+		matchRes.MapName = pm.mapPath
 	}
 
 	switch {
@@ -275,7 +283,7 @@ func playMap(
 		matchRes.Winner = tie
 	}
 
-	matchSummaryCh <- matchRes
+	pm.matchSummaryCh <- matchRes
 
 	return nil
 }
@@ -301,12 +309,28 @@ func RunTournamentOnMap(
 	var wg sync.WaitGroup
 	var randMapParams = newRandomMap(limits)
 
+	maxConcurrentPlay := int(math.Max(1, float64(runtime.NumCPU()-1)))
+
+	concurrentPlays := make(chan job, maxConcurrentPlay)
+	log.Printf("Launching %d games at the same time.", maxConcurrentPlay)
+
+	for i := 0; i < maxConcurrentPlay; i++ {
+		go func(id int) {
+			for j := range concurrentPlays {
+				log.Printf("Starting a game with worker %d", id)
+				if err := j.execute(); err != nil {
+					log.Print(err)
+				}
+				log.Printf("Finished a game with worker %d", id)
+			}
+		}(i)
+	}
+
 	for i, p1 := range competitors {
 		for j, p2 := range competitors {
 			if i != j {
-				log.Printf("launching %s vs %s", p1.Name(), p2.Name())
 				wg.Add(1)
-				go playMap(
+				concurrentPlays <- playMap{
 					mapPath,
 					isRand,
 					randMapParams,
@@ -315,11 +339,12 @@ func RunTournamentOnMap(
 					p2,
 					matchSummaryCh,
 					&wg,
-				)
+				}
 			}
 		}
 	}
 
 	wg.Wait()
+	close(concurrentPlays)
 
 }
