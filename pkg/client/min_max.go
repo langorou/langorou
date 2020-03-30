@@ -118,7 +118,7 @@ func (h *Heuristic) alphabeta(ctx context.Context, tt *transpositionTable, state
 	default:
 	}
 
-	hash := state.Hash(race)
+	hash := state.Hash(race, h.hashBuffer)
 
 	rec, cached := tt.get(hash, maxDepth)
 	if cached {

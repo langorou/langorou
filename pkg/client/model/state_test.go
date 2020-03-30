@@ -1,10 +1,11 @@
 package model
 
 import (
-	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkSortStd(b *testing.B) {
@@ -50,7 +51,7 @@ func TestHashing(t *testing.T) {
 	s2.SetCell(Coordinates{2, 2}, Neutral, 7)
 	s2.SetCell(Coordinates{7, 4}, Enemy, 75)
 
-	assert.NotEqual(t, s1.Hash(Ally), s2.Hash(Ally))
+	assert.NotEqual(t, s1.Hash(Ally, nil), s2.Hash(Ally, nil))
 }
 
 func TestSort(t *testing.T) {
