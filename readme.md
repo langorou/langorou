@@ -4,7 +4,7 @@ This is an IA for the game "Vampires VS Loup Garous" of the CentraleSupélec IA 
 
 The rules of the game are described [here](./doc/Projet.pdf).
 
-A thorough documentation is available [here](./doc/documentation.md)
+A thorough documentation is available [here](./doc/report.pdf)
 
 ## Requirements
 
