@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/langorou/langorou/pkg/client"
 )
@@ -32,7 +33,19 @@ func main() {
 	addr := net.JoinHostPort(args[0], args[1])
 	log.Printf("connecting to %s with name: %s", addr, *namePtr)
 
-	c, err := client.NewTCPClient(addr, *namePtr, client.NewDumbIA())
+	params := client.HeuristicParameters{
+		// Not risk averse at all
+		Counts:           1,
+		Battles:          0.02,
+		NeutralBattles:   0.03,
+		CumScore:         0.0001,
+		WinScore:         1e10,
+		LoseOverWinRatio: 0.8,
+		WinThreshold:     0.8,
+		MaxGroups:        2,
+		Groups:           0,
+	}
+	c, err := client.NewTCPClient(addr, *namePtr, client.NewMinMaxIAP(1600*time.Millisecond, params))
 	failIf(err, "")
 
 	failIf(c.Start(), "")

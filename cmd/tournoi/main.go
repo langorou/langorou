@@ -117,7 +117,7 @@ func main() {
 }
 
 func generatePlayers() []tournament.Participant {
-	dur := 100 * time.Millisecond
+	dur := 1 * time.Second
 
 	players := []tournament.Participant{
 		{Dumb: true},
@@ -216,4 +216,3 @@ func generatePlayers() []tournament.Participant {
 
 	return players
 }
-
