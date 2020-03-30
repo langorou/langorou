@@ -117,9 +117,9 @@ func (mr *MatchSummary) saveJSON(path string) error {
 	return nil
 }
 
-type TournamentResult []MatchSummary
+type Result []MatchSummary
 
-func (tr TournamentResult) MatchResults() string {
+func (tr Result) MatchResults() string {
 	var output string
 	for _, mr := range tr {
 		output += mr.String()
@@ -128,7 +128,7 @@ func (tr TournamentResult) MatchResults() string {
 	return output
 }
 
-func (tr TournamentResult) Leaderboard() string {
+func (tr Result) Leaderboard() string {
 	// gagnant 3 points
 	// perdant 0 points
 	// égalité 1 point chacun
@@ -162,7 +162,7 @@ func (tr TournamentResult) Leaderboard() string {
 	return output
 }
 
-func (tr TournamentResult) Save(path string) error {
+func (tr Result) Save(path string) error {
 	t := strconv.FormatInt(time.Now().Unix(), 10)
 
 	f, err := os.Create(filepath.Join(path, fmt.Sprintf("%s_tournament.txt", t)))

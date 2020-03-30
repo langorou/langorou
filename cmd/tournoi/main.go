@@ -61,7 +61,7 @@ func init() {
 }
 
 func generatePlayers() []tournament.Participant {
-	dur := 1 * time.Second
+	dur := 100 * time.Millisecond
 
 	players := []tournament.Participant{
 		{Dumb: true},
@@ -135,7 +135,7 @@ func main() {
 	competitors := generatePlayers()
 
 	matchSummaryCh := make(chan tournament.MatchSummary)
-	var leaderboard tournament.TournamentResult
+	var leaderboard tournament.Result
 
 	var wg sync.WaitGroup
 	wg.Add(1)
