@@ -287,8 +287,7 @@ func (c *TCPClient) Play() error {
 			log.Printf("Received BYE, stopping the client...")
 			return nil
 		case END:
-			log.Printf("Received END, getting ready for the next game...")
-			return c.Start()
+			log.Printf("Received END, ignoring it...")
 		default:
 			return fmt.Errorf("received unexpected command: %s", cmd)
 		}
