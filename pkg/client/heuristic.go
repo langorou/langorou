@@ -124,7 +124,6 @@ func (h *Heuristic) randomMove(state *model.State) model.Coup {
 // returns individual moves.
 // It computes a product of all the possible moves for each group of our race (including the move that consists in not moving)
 func (h *Heuristic) generateCoups(s *model.State, race model.Race) []model.Coup {
-	// TODO: try pre allocating here
 	all := getCoups()
 
 	for coord, cell := range s.Grid {
@@ -147,11 +146,8 @@ func (h *Heuristic) generateCoups(s *model.State, race model.Race) []model.Coup 
 			// Add the move to all the previous coups
 			for _, coup := range all[:max] {
 				// We have to make a copy here otherwise we will reuse the same array which will cause issues
-				newCoup := getCoup()
-				copy(newCoup, coup)
-				newCoup = append(newCoup, move)
-
-				all = append(all, newCoup)
+				newCoup := append(getCoup(), coup...)
+				all = append(all, append(newCoup, move))
 			}
 		}
 	}
