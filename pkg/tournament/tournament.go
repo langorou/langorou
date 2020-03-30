@@ -51,7 +51,7 @@ func (p Participant) Name() string {
 		return "dumb IA"
 	}
 
-	return fmt.Sprintf("min_max_%d_%+v", p.Timeout, p.Params)
+	return fmt.Sprintf("min_max_%d_%s", p.Timeout, p.Params.ShortString())
 }
 
 type matchResult int
