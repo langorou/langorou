@@ -40,22 +40,42 @@ type HeuristicParameters struct {
 	Groups float64
 }
 
+const (
+	DefaultCounts           = 1
+	DefaultBattles          = 0.02
+	DefaultNeutralBattles   = 0.03
+	DefaultCumScore         = 0.0001
+	DefaultWinScore         = 1e10
+	DefaultLoseOverWinRatio = 1
+	DefaultWinThreshold     = 1
+	DefaultMaxGroups        = 2
+	DefaultGroups           = 0
+)
+
 func (hp *HeuristicParameters) String() string {
 	return fmt.Sprintf("%+v", *hp)
+}
+
+// ShortString give a smaller string representation for heuristic parameters. Useful to name an ia in short way.
+func (hp *HeuristicParameters) ShortString() string {
+	return fmt.Sprintf(
+		"c%3.2f_b%3.2f_nb%3.2f_cs%4.3f_ws%3.2e_lowr%3.2f_wt%3.2f_mg%d_g%1.0f",
+		hp.Counts, hp.Battles, hp.NeutralBattles, hp.CumScore, hp.WinScore, hp.LoseOverWinRatio, hp.WinThreshold, hp.MaxGroups, hp.Groups,
+	)
 }
 
 // NewDefaultHeuristicParameters creates defaultns heuristic parameters
 func NewDefaultHeuristicParameters() HeuristicParameters {
 	return HeuristicParameters{
-		Counts:           1,
-		Battles:          0.02,
-		NeutralBattles:   0.03,
-		CumScore:         0.0001,
-		WinScore:         1e10,
-		LoseOverWinRatio: 1,
-		WinThreshold:     1.,
-		MaxGroups:        2,
-		Groups:           -0,
+		Counts:           DefaultCounts,
+		Battles:          DefaultBattles,
+		NeutralBattles:   DefaultNeutralBattles,
+		CumScore:         DefaultCumScore,
+		WinScore:         DefaultWinScore,
+		LoseOverWinRatio: DefaultLoseOverWinRatio,
+		WinThreshold:     DefaultWinThreshold,
+		MaxGroups:        DefaultMaxGroups,
+		Groups:           DefaultGroups,
 	}
 }
 
@@ -101,6 +121,11 @@ type Heuristic struct {
 
 func (h *Heuristic) String() string {
 	return h.HeuristicParameters.String()
+}
+
+// ShortString returns a smaller string representation of the heuristic
+func (h *Heuristic) ShortString() string {
+	return h.HeuristicParameters.ShortString()
 }
 
 // NewHeuristic creates a new heuristic given parameters

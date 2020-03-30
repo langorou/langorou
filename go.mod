@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/langorou/twilight v0.0.0-20200314213720-96c05cf1858d
+	github.com/langorou/twilight v0.0.0-20200330114338-cceadd1eff88
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/rakyll/statik v0.1.7 // indirect
 	github.com/spaolacci/murmur3 v1.1.0
